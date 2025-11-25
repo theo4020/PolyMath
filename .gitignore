@@ -1,0 +1,84 @@
+# ================================
+# Unreal Engine
+# ================================
+# Binaries, Intermediate, Saved
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+DerivedDataCacheBoot/
+.cache/
+
+# Build artifacts
+Build/*/ShaderCompileWorker/
+Build/*/UnrealBuildTool/
+
+# Ignore autosaves, backups
+*_BuiltData.uasset
+*_BuiltData.uexp
+Autosaves/
+Collections/
+Backup/
+IntermediateConfig/
+
+# Generated project files
+*.opensdf
+*.sdf
+*.suo
+*.pch
+*.pdb
+*.mdb
+*.ipdb
+*.iobj
+*.obj
+*.log
+*.tlog
+
+# Config local overrides
+Config/DefaultEditorSettings.ini
+Config/DefaultEditorKeyBindings.ini
+
+# Local maps or temporary uassets
+*_Temp.uasset
+*_Temp.umap
+
+# Plugins intermediates
+Plugins/*/Intermediate/
+Plugins/*/Binaries/
+
+# ================================
+# Visual Studio
+# ================================
+.vs/
+*.VC.db
+*.VC.opendb
+
+# ================================
+# JetBrains Rider
+# ================================
+.idea/
+.gradle/
+out/
+*.iml
+
+# Rider UE-specific caches
+/.Rider/
+*.sln.iml
+
+# ================================
+# OS files
+# ================================
+# Windows
+Thumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ================================
+# Git
+# ================================
+*.orig
+
