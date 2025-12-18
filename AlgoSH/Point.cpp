@@ -10,15 +10,20 @@ Point::Point() {
     m_y = 0;
 }
 
-int Point::getX() {
+Point::Point(int x, int y) {
+    m_x = x;
+    m_y = y;
+}
+
+int Point::X() {
     return m_x;
 }
-int Point::getY() {
+int Point::Y() {
     return m_y;
 }
-void Point::setX(int x) {
+void Point::X(int x) {
     m_x = x;
 }
-void Point::setY(int y) {
+void Point::Y(int y) {
     m_y = y;
 }

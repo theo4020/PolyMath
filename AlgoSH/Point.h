@@ -12,10 +12,11 @@ class Point {
 
     public:
     Point();
-    int getX();
-    int getY();
-    void setX(int x);
-    void setY(int y);
+    Point(int x, int y);
+    int X();
+    int Y();
+    void X(int x);
+    void Y(int y);
 };
 
 
