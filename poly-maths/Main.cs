@@ -16,6 +16,7 @@ public partial class Main : Node2D
 	private List<Vector2> resultPoints = new List<Vector2>();
 	private bool polygonClosed = false;
 	private bool windowClosed = false;
+	private bool resultClosed = false;
 	
 	[Export] private int radius = 5;
 	
@@ -59,11 +60,10 @@ public partial class Main : Node2D
 			}
 			else if (!windowClosed)
 			{
-				List<Vector2> temp = windowPoints;
+				List<Vector2> temp = new List<Vector2>(windowPoints);
 				temp.Add(GetViewport().GetMousePosition());
 				if (IsConvex(temp))
 				{
-					GD.Print(IsConvex(temp));
 					windowPoints.Add(GetViewport().GetMousePosition());
 					QueueRedraw();
 				}
@@ -86,6 +86,7 @@ public partial class Main : Node2D
 				{
 					windowClosed = true;
 					resultPoints = AlgoSH(polygonPoints, windowPoints);
+					resultClosed = true;
 					QueueRedraw();
 				}
 			}
@@ -104,32 +105,53 @@ public partial class Main : Node2D
 		{
 			DrawLine(windowPoints[i], windowPoints[i + 1], windowColor, 2);
 		}
-		
-		for (int i = 0; i < resultPoints.Count - 1; i++)
+
+		if (resultClosed)
 		{
-			DrawLine(resultPoints[i], resultPoints[i + 1], resultColor, 2);
+			for (int i = 0; i < resultPoints.Count - 1; i++)
+			{
+				DrawLine(resultPoints[i], resultPoints[i + 1], resultColor, 2);
+			}
+			
+			DrawLine(resultPoints[resultPoints.Count - 1], resultPoints[0], resultColor, 2);
+
+			DrawPolygon(resultPoints.ToArray(), new Color[] { resultColor });
 		}
+		
 
 		if (polygonClosed)
 		{
 			DrawLine(polygonPoints[polygonPoints.Count - 1], polygonPoints[0], polygonColor, 2);
 
-			DrawPolygon(polygonPoints.ToArray(), new Color[] { polygonColor });
+			if (!resultClosed)
+			{
+				DrawPolygon(polygonPoints.ToArray(), new Color[] { polygonColor });
+			}
 		}
 		
 		if (windowClosed)
 		{
 			DrawLine(windowPoints[windowPoints.Count - 1], windowPoints[0], windowColor, 2);
 
-			DrawPolygon(windowPoints.ToArray(), new Color[] { windowColor });
+			if (!resultClosed)
+			{
+				DrawPolygon(windowPoints.ToArray(), new Color[] { windowColor });
+			}
 		}
 
 		// affiche des cercles aux sommets
-		foreach (var p in polygonPoints)
+		if (!resultClosed)
 		{
-			DrawCircle(p, radius, new Color(0, 0, 0));
+			foreach (var p in polygonPoints)
+			{
+				DrawCircle(p, radius, new Color(0, 0, 0));
+			}
+			foreach (var p in windowPoints)
+			{
+				DrawCircle(p, radius, new Color(0, 0, 0));
+			}
 		}
-		foreach (var p in windowPoints)
+		foreach (var p in resultPoints)
 		{
 			DrawCircle(p, radius, new Color(0, 0, 0));
 		}
@@ -156,14 +178,13 @@ public partial class Main : Node2D
 
 		int n = pts.Count;
 
-		for (int i = n - 2; i < n; i++)
+		for (int i = 0; i < n; i++)
 		{
-			Vector2 a = pts[i-2];
-			Vector2 b = pts[i-1];
-			Vector2 c = pts[i];
+			Vector2 a = pts[i];
+			Vector2 b = pts[(i + 1) % n];
+			Vector2 c = pts[(i + 2) % n];
 
 			float cross = (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X);
-			GD.Print(cross);
 			if (cross < 0) gotNegative = true;
 			else if (cross > 0) gotPositive = true;
 
@@ -177,18 +198,19 @@ public partial class Main : Node2D
 	List<Vector2> AlgoSH(List<Vector2> P, List<Vector2> F)
 	{
 		Vector2 S = new Vector2(), f = new Vector2(), I;
+		List<Vector2> tempP = new List<Vector2>(P);
 
 		for (int i = 0; i < F.Count - 1; i++) {
 			List<Vector2> PS = new List<Vector2>();
-			for (int j = 0; j < P.Count; j++) {
+			for (int j = 0; j < tempP.Count; j++) {
 				if (j == 1) {
-					f = P[j];
+					f = tempP[j];
 				}
-				else if (coupe(S, P[j], F[i], F[i+1])) {
-					I = intersection(S, P[j], F[i], F[i+1]);
+				else if (coupe(S, tempP[j], F[i], F[i+1])) {
+					I = intersection(S, tempP[j], F[i], F[i+1]);
 					PS.Add(I);
 				}
-				S = P[j];
+				S = tempP[j];
 				if (visible(S, F[i], F[i+1])) {
 					PS.Add(S);
 				}
@@ -199,11 +221,16 @@ public partial class Main : Node2D
 					I = intersection(S, f, F[i], F[i+1]);
 					PS.Add(I);
 				}
-				P = PS;
+
+				tempP = new List<Vector2>(PS);
 			}
 		}
 
-		return P;
+		for (int i = 0; i < tempP.Count - 1; i++)
+		{
+			GD.Print("PS : ",tempP[i]);
+		}
+		return tempP;
 	}
 
 	//retourne un booléen si S est visible par rapport à la droite (F1F2)
@@ -241,6 +268,7 @@ public partial class Main : Node2D
 		int BY = (int)(P3.Y - P1.Y);
 		int t = X[0][0] * BX + X[0][1] * BY;
 		Vector2 Result = new Vector2(P1.X + (P2.X * t) - (P1.X * t) , P1.Y + (P2.Y * t) - (P1.Y * t) );
+		GD.Print("intersection : ", Result);
 		return Result;
 
 	}
