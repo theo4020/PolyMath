@@ -12,6 +12,7 @@ public partial class Main : Node2D
 	private TextureRect textRect;
 	
 	private List<Vector2> polygonPoints = new List<Vector2>();
+	private List<Vector2> polygonTests = new List<Vector2>();
 	private List<Vector2> windowPoints = new List<Vector2>();
 	private List<Vector2> resultPoints = new List<Vector2>();
 	private bool polygonClosed = false;
@@ -53,6 +54,10 @@ public partial class Main : Node2D
 		
 		if (Input.IsActionJustPressed("ClicGauche"))
 		{
+			//Test
+			polygonTests.Add(GetViewport().GetMousePosition());
+			QueueRedraw();
+			/*
 			if (!polygonClosed)
 			{
 				polygonPoints.Add(GetViewport().GetMousePosition());
@@ -68,10 +73,17 @@ public partial class Main : Node2D
 					QueueRedraw();
 				}
 			}
+			*/
 		}
 		
 		if (Input.IsActionJustPressed("ClicDroit"))
 		{
+			//Tests
+			Vector2 test = intersection(polygonTests[0], polygonTests[1], polygonTests[2], polygonTests[3]);
+			GD.Print(polygonTests[0] + "\n" +  polygonTests[1] + "\n" + polygonTests[2] + "\n" + polygonTests[3] + "\n" + test);
+			polygonTests.Add(test);
+			QueueRedraw();
+			/*
 			if (!polygonClosed)
 			{
 				if (polygonPoints.Count >= 3)
@@ -90,6 +102,7 @@ public partial class Main : Node2D
 					QueueRedraw();
 				}
 			}
+			*/
 		}
 	}
 	
@@ -155,6 +168,11 @@ public partial class Main : Node2D
 		{
 			DrawCircle(p, radius, new Color(0, 0, 0));
 		}
+		//test
+		foreach (var p in polygonTests)
+		{
+			DrawCircle(p, radius, new Color(0, 0, 0));
+		}
 	}
 	
 	public void ResetPolygons()
@@ -202,8 +220,8 @@ public partial class Main : Node2D
 
 		for (int i = 0; i < F.Count - 1; i++) {
 			List<Vector2> PS = new List<Vector2>();
-			for (int j = 0; j < tempP.Count; j++) {
-				if (j == 1) {
+			for (int j = 0; j < tempP.Count - 1; j++) {
+				if (j == 0) {
 					f = tempP[j];
 				}
 				else if (coupe(S, tempP[j], F[i], F[i+1])) {
@@ -244,7 +262,7 @@ public partial class Main : Node2D
 
 	// retourne un booléen suivant l'intersection possible entre le côté [SP] du polygone et le bord prolongé (une droite) (F1F2) de la fenêtre
 	bool coupe(Vector2 S, Vector2 P, Vector2 F1, Vector2 F2) {
-		return visible(S, F1, F2) && visible(P, F1, F2);
+		return visible(S, F1, F2) ^ visible(P, F1, F2);
 	}
 
 	// retourne le point d'intersection entre le segement [SP] et la droite (F1F2)
@@ -253,20 +271,26 @@ public partial class Main : Node2D
 		int a = (int)(P2.X - P1.X), b = (int)(P3.X - P4.X);
 		int c = (int)(P2.Y - P1.Y), d = (int)(P3.Y - P4.Y);
 		//
-		int detA = a*d - b*c;
+		GD.Print("P1X : " + P1.X + " P1Y : " + P1.Y + " P2X : " + P2.X + " P2Y : " + P2.Y);
+		GD.Print("P3X : " + P3.X + " P3Y : " + P3.Y + " P4X : " + P4.X + " P4Y : " + P4.Y);
+		GD.Print("a : " + a + " b : " + b + " c : " + c  + " d : " + d);
+		float detA = a*d - b*c;
+		GD.Print("detA : " + detA);
 		if (detA == 0) {
+			GD.Print("detA = 0");
 			return P1;
 		}
 		//Matrice A^-1
-		List<List<int>> X = new List<List<int>>()
+		List<List<float>> X = new List<List<float>>()
 		{
-			new List<int>() { (1/detA) * d , (1/detA) * (-b) },
-			new List<int>() { (1/detA) * (-c) , (1/detA) * a }
+			new List<float>() { d/detA , (-b)/detA },
+			new List<float>() { (-c)/detA , a/detA }
 		};
 		
 		int BX = (int)(P3.X - P1.X);
 		int BY = (int)(P3.Y - P1.Y);
-		int t = X[0][0] * BX + X[0][1] * BY;
+		float t = X[0][0] * BX + X[0][1] * BY;
+		GD.Print("X[0][0] : " + X[0][0] + " BX : " + BX + " X[0][1] : " + X[0][1] + " BY : " + BY);
 		Vector2 Result = new Vector2(P1.X + (P2.X * t) - (P1.X * t) , P1.Y + (P2.Y * t) - (P1.Y * t) );
 		GD.Print("intersection : ", Result);
 		return Result;
