@@ -55,9 +55,9 @@ public partial class Main : Node2D
 		if (Input.IsActionJustPressed("ClicGauche"))
 		{
 			//Test
-			polygonTests.Add(GetViewport().GetMousePosition());
-			QueueRedraw();
-			/*
+			//polygonTests.Add(GetViewport().GetMousePosition());
+			//QueueRedraw();
+			
 			if (!polygonClosed)
 			{
 				polygonPoints.Add(GetViewport().GetMousePosition());
@@ -73,36 +73,39 @@ public partial class Main : Node2D
 					QueueRedraw();
 				}
 			}
-			*/
+			
 		}
 		
 		if (Input.IsActionJustPressed("ClicDroit"))
 		{
 			//Tests
-			Vector2 test = intersection(polygonTests[0], polygonTests[1], polygonTests[2], polygonTests[3]);
+			/*Vector2 test = intersection(polygonTests[0], polygonTests[1], polygonTests[2], polygonTests[3]);
 			GD.Print(polygonTests[0] + "\n" +  polygonTests[1] + "\n" + polygonTests[2] + "\n" + polygonTests[3] + "\n" + test);
 			polygonTests.Add(test);
 			QueueRedraw();
-			/*
+			*/
 			if (!polygonClosed)
 			{
 				if (polygonPoints.Count >= 3)
 				{
 					polygonClosed = true;
 					QueueRedraw();
+					GD.Print(IsConvex(polygonPoints));
 				}
 			}
 			else if (!windowClosed)
 			{
 				if (windowPoints.Count >= 3)
 				{
+					windowPoints.Add(windowPoints[0]);
 					windowClosed = true;
 					resultPoints = AlgoSH(polygonPoints, windowPoints);
 					resultClosed = true;
 					QueueRedraw();
+					GD.Print(IsConvex(windowPoints));
 				}
 			}
-			*/
+			
 		}
 	}
 	
@@ -185,7 +188,7 @@ public partial class Main : Node2D
 		QueueRedraw();
 	}
 	
-	//ne marche pas
+	//ne marche pas ?
 	private bool IsConvex(List<Vector2> pts)
 	{
 		if (pts.Count < 4)
@@ -215,12 +218,12 @@ public partial class Main : Node2D
 	
 	List<Vector2> AlgoSH(List<Vector2> P, List<Vector2> F)
 	{
-		Vector2 S = new Vector2(), f = new Vector2(), I;
+		Vector2 S = new Vector2(), f = new Vector2(), I = new  Vector2();
 		List<Vector2> tempP = new List<Vector2>(P);
 
-		for (int i = 0; i < F.Count - 1; i++) {
+		for (int i = 0; i <= F.Count - 2; i++) {
 			List<Vector2> PS = new List<Vector2>();
-			for (int j = 0; j < tempP.Count - 1; j++) {
+			for (int j = 0; j <= tempP.Count - 1; j++) {
 				if (j == 0) {
 					f = tempP[j];
 				}
@@ -242,11 +245,6 @@ public partial class Main : Node2D
 
 				tempP = new List<Vector2>(PS);
 			}
-		}
-
-		for (int i = 0; i < tempP.Count - 1; i++)
-		{
-			GD.Print("PS : ",tempP[i]);
 		}
 		return tempP;
 	}
@@ -271,13 +269,9 @@ public partial class Main : Node2D
 		int a = (int)(P2.X - P1.X), b = (int)(P3.X - P4.X);
 		int c = (int)(P2.Y - P1.Y), d = (int)(P3.Y - P4.Y);
 		//
-		GD.Print("P1X : " + P1.X + " P1Y : " + P1.Y + " P2X : " + P2.X + " P2Y : " + P2.Y);
-		GD.Print("P3X : " + P3.X + " P3Y : " + P3.Y + " P4X : " + P4.X + " P4Y : " + P4.Y);
-		GD.Print("a : " + a + " b : " + b + " c : " + c  + " d : " + d);
+		
 		float detA = a*d - b*c;
-		GD.Print("detA : " + detA);
 		if (detA == 0) {
-			GD.Print("detA = 0");
 			return P1;
 		}
 		//Matrice A^-1
@@ -290,9 +284,7 @@ public partial class Main : Node2D
 		int BX = (int)(P3.X - P1.X);
 		int BY = (int)(P3.Y - P1.Y);
 		float t = X[0][0] * BX + X[0][1] * BY;
-		GD.Print("X[0][0] : " + X[0][0] + " BX : " + BX + " X[0][1] : " + X[0][1] + " BY : " + BY);
 		Vector2 Result = new Vector2(P1.X + (P2.X * t) - (P1.X * t) , P1.Y + (P2.Y * t) - (P1.Y * t) );
-		GD.Print("intersection : ", Result);
 		return Result;
 
 	}
