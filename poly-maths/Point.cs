@@ -10,6 +10,7 @@ public partial class Point : Node
 	{
 		None,
 		Polygon,
+		Bezier,
 		Window,
 		Result
 	}
