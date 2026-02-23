@@ -352,6 +352,11 @@ namespace PolyMaths.Tests
             Logger.Data("Shear (0,10)", result);
             Assert("Shearing X correct", Math.Abs(result.x - 5f) < 1e-4f && Math.Abs(result.y - 10f) < 1e-4f);
 
+            var shearY = Matrix3x3.Shearing(0f, 0.5f);
+            result = shearY.TransformPoint(new Point2D(10, 0));
+            Logger.Data("Shear (10,0) shy=0.5", result);
+            Assert("Shearing Y correct", Math.Abs(result.x - 10f) < 1e-4f && Math.Abs(result.y - 5f) < 1e-4f);
+
             Logger.SubSection("Combined: Scale 2x -> Rotate 45deg -> Translate (100, 100)");
             var combined = Matrix3x3.Translation(100, 100) *
                           Matrix3x3.Rotation((float)(Math.PI / 4)) *
