@@ -10,8 +10,8 @@ public partial class Main : Node2D
 	//liste est en cours de dessin
 	private enum EDrawPhase { Polygon, Window, Done }
 
-	private EMode     _currentMode  = EMode.Draw;
-	private EDrawPhase _drawPhase   = EDrawPhase.Polygon;
+	private EMode _currentMode = EMode.Draw;
+	private EDrawPhase _drawPhase = EDrawPhase.Polygon;
 	
 	//Node
 	private VBoxContainer _container;
@@ -30,23 +30,23 @@ public partial class Main : Node2D
 
 	//Listes polygones
 	private List<Point> _polygonPoints = new List<Point>();
-	private List<Point> _windowPoints  = new List<Point>();
-	private List<Point> _resultPoints  = new List<Point>();
+	private List<Point> _windowPoints = new List<Point>();
+	private List<Point> _resultPoints = new List<Point>();
 
 	private bool _polygonClosed = false;
-	private bool _windowClosed  = false;
+	private bool _windowClosed = false;
 
-	private Point       _draggedPoint   = null;
+	private Point _draggedPoint = null;
 	private List<Point> _draggedPolygon = null;
-	private Vector2     _dragOffset     = Vector2.Zero;
+	private Vector2 _dragOffset = Vector2.Zero;
 
 	//Exports
-	[Export] private float  _mouseRadius   = 20f;
-	[Export] private Color  _polygonColor  = new Color(0.2f, 0.6f, 1f, 0.4f);
-	[Export] private Color  _windowColor   = new Color(1f, 0.6f, 0.2f, 0.4f);
-	[Export] private Color  _resultColor   = new Color(0.2f, 1f, 0.4f, 0.7f);
-	[Export] private float  _lineWidth     = 2f;
-	[Export] private float  _pointRadius   = 6f;
+	[Export] private float _mouseRadius = 20f;
+	[Export] private Color _polygonColor = new Color(0.2f, 0.6f, 1f, 0.4f);
+	[Export] private Color _windowColor = new Color(1f, 0.6f, 0.2f, 0.4f);
+	[Export] private Color _resultColor = new Color(0.2f, 1f, 0.4f, 0.7f);
+	[Export] private float _lineWidth = 2f;
+	[Export] private float _pointRadius = 6f;
 
 	public override void _Ready()
 	{
@@ -63,8 +63,22 @@ public partial class Main : Node2D
 		HandleLeftClick(mousePos);
 		HandleRightClick();
 		HandleDrag(mousePos);
+		HandlePlus();
+		HandleMinus();
 
 		QueueRedraw();
+	}
+
+	private void HandlePlus()
+	{
+		if (!Input.IsActionJustPressed("AugmenterPas")) return;
+		
+	}
+	
+	private void HandleMinus()
+	{
+		if (!Input.IsActionJustPressed("DiminuerPas")) return;
+		
 	}
 
 	//Gestion des clics gauche
@@ -88,8 +102,8 @@ public partial class Main : Node2D
 				var pt = GetNearestPoint(mousePos);
 				if (pt != null)
 				{
-					_draggedPoint  = pt;
-					_dragOffset    = mousePos - pt.ToVector2();
+					_draggedPoint = pt;
+					_dragOffset = mousePos - pt.ToVector2();
 				}
 				break;
 
@@ -99,7 +113,7 @@ public partial class Main : Node2D
 				{
 					_draggedPoint = anchor;
 					_draggedPolygon = GetPolygonOf(anchor);
-					_dragOffset     = mousePos - anchor.ToVector2();
+					_dragOffset = mousePos - anchor.ToVector2();
 				}
 				break;
 		}
@@ -155,7 +169,7 @@ public partial class Main : Node2D
 			if (_polygonPoints.Count >= 3)
 			{
 				_polygonClosed = true;
-				_drawPhase     = EDrawPhase.Window;
+				_drawPhase = EDrawPhase.Window;
 				RecalculateResult();
 			}
 		}
@@ -164,7 +178,7 @@ public partial class Main : Node2D
 			if (_windowPoints.Count >= 3)
 			{
 				_windowClosed = true;
-				_drawPhase    = EDrawPhase.Done;
+				_drawPhase = EDrawPhase.Done;
 				RecalculateResult();
 			}
 		}
@@ -175,7 +189,7 @@ public partial class Main : Node2D
 	{
 		if (Input.IsActionJustReleased("ClicGauche"))
 		{
-			_draggedPoint   = null;
+			_draggedPoint = null;
 			_draggedPolygon = null;
 			return;
 		}
@@ -185,8 +199,8 @@ public partial class Main : Node2D
 		if (_draggedPolygon != null && _draggedPoint != null)
 		{
 			Vector2 anchorPos = _draggedPoint.ToVector2();
-			Vector2 newPos    = mousePos - _dragOffset;
-			Vector2 delta     = newPos - anchorPos;
+			Vector2 newPos = mousePos - _dragOffset;
+			Vector2 delta = newPos - anchorPos;
 
 			foreach (var p in _draggedPolygon)
 			{
@@ -207,7 +221,7 @@ public partial class Main : Node2D
 	public override void _Draw()
 	{
 		DrawPolygonWithOutline(_polygonPoints, _polygonClosed, _polygonColor);
-		DrawPolygonWithOutline(_windowPoints,  _windowClosed,  _windowColor);
+		DrawPolygonWithOutline(_windowPoints, _windowClosed, _windowColor);
 
 		if (_resultPoints.Count >= 3)
 		{
@@ -215,7 +229,7 @@ public partial class Main : Node2D
 		}
 
 		DrawPoints(_polygonPoints, _polygonColor);
-		DrawPoints(_windowPoints,  _windowColor);
+		DrawPoints(_windowPoints, _windowColor);
 	}
 
 	private void DrawPolygonWithOutline(List<Point> pts, bool closed, Color color)
@@ -250,10 +264,10 @@ public partial class Main : Node2D
 		_polygonPoints.Clear();
 		_windowPoints.Clear();
 		_resultPoints.Clear();
-		_polygonClosed  = false;
-		_windowClosed   = false;
-		_drawPhase      = EDrawPhase.Polygon;
-		_draggedPoint   = null;
+		_polygonClosed = false;
+		_windowClosed = false;
+		_drawPhase = EDrawPhase.Polygon;
+		_draggedPoint = null;
 		_draggedPolygon = null;
 		QueueRedraw();
 	}
