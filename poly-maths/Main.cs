@@ -1,293 +1,208 @@
 using Godot;
-using System;
-using System.Collections.Generic;
+using PolyMaths.Managers;
+using PolyMaths.Algorithms;
 
 public partial class Main : Node2D
 {
-	private int pixelWidth = 192;
-	private int pixelHeight = 108;
+    // ── Mode ──────────────────────────────────────────────────────────────
+    private enum AppMode { Polygon, Bezier, BSpline }
+    private AppMode _mode = AppMode.Polygon;
 
-	private Image img;
-	private ImageTexture imgTexture;
-	private TextureRect textRect;
-	
-	private List<Vector2> polygonPoints = new List<Vector2>();
-	private List<Vector2> polygonTests = new List<Vector2>();
-	private List<Vector2> windowPoints = new List<Vector2>();
-	private List<Vector2> resultPoints = new List<Vector2>();
-	private bool polygonClosed = false;
-	private bool windowClosed = false;
-	private bool resultClosed = false;
-	
-	[Export] private int radius = 5;
-	
-	[Export] private Color polygonColor;
-	[Export] private Color windowColor;
-	[Export] private Color resultColor;
+    // ── Managers ─────────────────────────────────────────────────────────
+    private PolygonManager _polyMgr = new PolygonManager();
+    private BezierManager  _bezMgr  = new BezierManager();
+    // BSplineManager added in Task 9
 
-	public int PixelWidth
-	{
-		get => pixelWidth;
-		set => pixelWidth = value;
-	}
-	
-	public int PixelHeight
-	{
-		get => pixelHeight;
-		set => pixelHeight = value;
-	}
+    // ── Menu ─────────────────────────────────────────────────────────────
+    private PopupMenu _menu;
+    private Label     _hud;
 
-	public override void _Ready()
-	{
-		base._Ready();
-		
-	}
+    // ── Menu item IDs ────────────────────────────────────────────────────
+    // Mode
+    private const int M_MODE_POLYGON = 0;
+    private const int M_MODE_BEZIER  = 1;
+    private const int M_MODE_BSPLINE = 2;
+    // Polygon
+    private const int M_POLY_RESET   = 10;
+    // Bezier
+    private const int M_BEZ_NEW          = 20;
+    private const int M_BEZ_DELETE       = 21;
+    private const int M_BEZ_TOGGLE_MODE  = 22;
+    private const int M_BEZ_TOGGLE_METHOD= 23;
+    private const int M_BEZ_STEP_UP      = 24;
+    private const int M_BEZ_STEP_DOWN    = 25;
+    private const int M_BEZ_JOIN_C0      = 26;
+    private const int M_BEZ_JOIN_C1      = 27;
+    private const int M_BEZ_JOIN_C2      = 28;
+    private const int M_BEZ_FILL         = 29;
+    private const int M_BEZ_BENCH        = 30;
+    private const int M_BEZ_TRANSLATE    = 31;
+    private const int M_BEZ_ROTATE       = 32;
+    private const int M_BEZ_SCALE        = 33;
+    private const int M_BEZ_SHEAR        = 34;
 
-	public override void _Process(double delta)
-	{
-		base._Process(delta);
-		
-		if (Input.IsActionPressed("Quitter"))
-		{
-			GetTree().Quit();
-		}
-		
-		if (Input.IsActionJustPressed("ClicGauche"))
-		{
-			//Test
-			//polygonTests.Add(GetViewport().GetMousePosition());
-			//QueueRedraw();
-			
-			if (!polygonClosed)
-			{
-				polygonPoints.Add(GetViewport().GetMousePosition());
-				QueueRedraw();
-			}
-			else if (!windowClosed)
-			{
-				List<Vector2> temp = new List<Vector2>(windowPoints);
-				temp.Add(GetViewport().GetMousePosition());
-				if (IsConvex(temp))
-				{
-					windowPoints.Add(GetViewport().GetMousePosition());
-					QueueRedraw();
-				}
-			}
-			
-		}
-		
-		if (Input.IsActionJustPressed("ClicDroit"))
-		{
-			//Tests
-			/*Vector2 test = intersection(polygonTests[0], polygonTests[1], polygonTests[2], polygonTests[3]);
-			GD.Print(polygonTests[0] + "\n" +  polygonTests[1] + "\n" + polygonTests[2] + "\n" + polygonTests[3] + "\n" + test);
-			polygonTests.Add(test);
-			QueueRedraw();
-			*/
-			if (!polygonClosed)
-			{
-				if (polygonPoints.Count >= 3)
-				{
-					polygonClosed = true;
-					QueueRedraw();
-					GD.Print(IsConvex(polygonPoints));
-				}
-			}
-			else if (!windowClosed)
-			{
-				if (windowPoints.Count >= 3)
-				{
-					windowPoints.Add(windowPoints[0]);
-					windowClosed = true;
-					resultPoints = AlgoSH(polygonPoints, windowPoints);
-					resultClosed = true;
-					QueueRedraw();
-					GD.Print(IsConvex(windowPoints));
-				}
-			}
-			
-		}
-	}
-	
-	public override void _Draw()
-	{
-		// Dessine les segments entre les points
-		for (int i = 0; i < polygonPoints.Count - 1; i++)
-		{
-			DrawLine(polygonPoints[i], polygonPoints[i + 1], polygonColor, 2);
-		}
-		
-		for (int i = 0; i < windowPoints.Count - 1; i++)
-		{
-			DrawLine(windowPoints[i], windowPoints[i + 1], windowColor, 2);
-		}
+    // ── Lifecycle ────────────────────────────────────────────────────────
+    public override void _Ready()
+    {
+        BuildMenu();
+        BuildHud();
+        // Uncomment to run tests:
+        // new PolyMaths.Tests.PolygonTestSuite().RunAllTests();
+        // new PolyMaths.Tests.BezierTestSuite().RunAllTests();
+    }
 
-		if (resultClosed)
-		{
-			for (int i = 0; i < resultPoints.Count - 1; i++)
-			{
-				DrawLine(resultPoints[i], resultPoints[i + 1], resultColor, 2);
-			}
-			
-			DrawLine(resultPoints[resultPoints.Count - 1], resultPoints[0], resultColor, 2);
+    public override void _Process(double delta)
+    {
+        if (Input.IsActionPressed("Quitter"))
+            GetTree().Quit();
 
-			DrawPolygon(resultPoints.ToArray(), new Color[] { resultColor });
-		}
-		
+        // Keyboard step control (Bézier)
+        if (_mode == AppMode.Bezier)
+        {
+            if (Input.IsKeyJustPressed(Key.Plus)  || Input.IsKeyJustPressed(Key.KpAdd))      _bezMgr.StepUp();
+            if (Input.IsKeyJustPressed(Key.Minus) || Input.IsKeyJustPressed(Key.KpSubtract)) _bezMgr.StepDown();
+            if (Input.IsKeyJustPressed(Key.Delete))  _bezMgr.HandleDelete();
+            if (Input.IsKeyJustPressed(Key.Tab))     _bezMgr.SelectNext();
+        }
 
-		if (polygonClosed)
-		{
-			DrawLine(polygonPoints[polygonPoints.Count - 1], polygonPoints[0], polygonColor, 2);
+        // Mouse drag (must poll every frame)
+        if (_mode == AppMode.Bezier && Input.IsMouseButtonPressed(MouseButton.Left))
+            _bezMgr.HandleMouseMove(GetViewport().GetMousePosition());
 
-			if (!resultClosed)
-			{
-				DrawPolygon(polygonPoints.ToArray(), new Color[] { polygonColor });
-			}
-		}
-		
-		if (windowClosed)
-		{
-			DrawLine(windowPoints[windowPoints.Count - 1], windowPoints[0], windowColor, 2);
+        // Clicks
+        if (Input.IsActionJustPressed("ClicGauche"))  HandleLeftClick();
+        if (Input.IsActionJustReleased("ClicGauche")) _bezMgr.HandleLeftRelease();
+        if (Input.IsActionJustPressed("ClicDroit"))   HandleRightClick();
 
-			if (!resultClosed)
-			{
-				DrawPolygon(windowPoints.ToArray(), new Color[] { windowColor });
-			}
-		}
+        UpdateHud();
+        QueueRedraw();
+    }
 
-		// affiche des cercles aux sommets
-		if (!resultClosed)
-		{
-			foreach (var p in polygonPoints)
-			{
-				DrawCircle(p, radius, new Color(0, 0, 0));
-			}
-			foreach (var p in windowPoints)
-			{
-				DrawCircle(p, radius, new Color(0, 0, 0));
-			}
-		}
-		foreach (var p in resultPoints)
-		{
-			DrawCircle(p, radius, new Color(0, 0, 0));
-		}
-		//test
-		foreach (var p in polygonTests)
-		{
-			DrawCircle(p, radius, new Color(0, 0, 0));
-		}
-	}
-	
-	public void ResetPolygons()
-	{
-		polygonPoints.Clear();
-		windowPoints.Clear();
-		resultPoints.Clear();
-		polygonClosed = false;
-		windowClosed = false;
-		QueueRedraw();
-	}
-	
-	//ne marche pas ?
-	private bool IsConvex(List<Vector2> pts)
-	{
-		if (pts.Count < 4)
-			return true; // moins de 4 points = convexe
+    private void HandleLeftClick()
+    {
+        var mouse = GetViewport().GetMousePosition();
+        switch (_mode)
+        {
+            case AppMode.Polygon: _polyMgr.HandleLeftClick(mouse); break;
+            case AppMode.Bezier:  _bezMgr.HandleLeftClick(mouse);  break;
+        }
+    }
 
-		bool gotNegative = false;
-		bool gotPositive = false;
+    private void HandleRightClick()
+    {
+        if (_mode == AppMode.Polygon)
+        {
+            _polyMgr.HandleRightClick();
+            return;
+        }
+        // Bezier / BSpline: show popup menu
+        _menu.Position = (Vector2I)GetViewport().GetMousePosition();
+        _menu.Popup();
+    }
 
-		int n = pts.Count;
+    // ── Drawing ──────────────────────────────────────────────────────────
+    public override void _Draw()
+    {
+        switch (_mode)
+        {
+            case AppMode.Polygon: _polyMgr.Draw(this); break;
+            case AppMode.Bezier:  _bezMgr.Draw(this);  break;
+        }
+    }
 
-		for (int i = 0; i < n; i++)
-		{
-			Vector2 a = pts[i];
-			Vector2 b = pts[(i + 1) % n];
-			Vector2 c = pts[(i + 2) % n];
+    // ── Menu construction ─────────────────────────────────────────────────
+    private void BuildMenu()
+    {
+        var canvasLayer = new CanvasLayer();
+        AddChild(canvasLayer);
 
-			float cross = (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X);
-			if (cross < 0) gotNegative = true;
-			else if (cross > 0) gotPositive = true;
+        _menu = new PopupMenu();
+        canvasLayer.AddChild(_menu);
+        _menu.IdPressed += OnMenuPressed;
 
-			if (gotNegative && gotPositive) return false; // concave détecté
-		}
+        // Mode switcher
+        _menu.AddItem("Mode: Polygone",  M_MODE_POLYGON);
+        _menu.AddItem("Mode: Bezier",    M_MODE_BEZIER);
+        _menu.AddItem("Mode: BSpline",   M_MODE_BSPLINE);
+        _menu.AddSeparator();
+        // Polygon items
+        _menu.AddItem("Reset polygone",  M_POLY_RESET);
+        _menu.AddSeparator();
+        // Bezier items
+        _menu.AddItem("Nouvelle courbe",          M_BEZ_NEW);
+        _menu.AddItem("Supprimer courbe active",   M_BEZ_DELETE);
+        _menu.AddSeparator();
+        _menu.AddItem("Toggle Edit / Append",      M_BEZ_TOGGLE_MODE);
+        _menu.AddItem("Toggle Direct / Casteljau", M_BEZ_TOGGLE_METHOD);
+        _menu.AddSeparator();
+        _menu.AddItem("Pas +",  M_BEZ_STEP_UP);
+        _menu.AddItem("Pas -",  M_BEZ_STEP_DOWN);
+        _menu.AddSeparator();
+        _menu.AddItem("Raccord C0", M_BEZ_JOIN_C0);
+        _menu.AddItem("Raccord C1", M_BEZ_JOIN_C1);
+        _menu.AddItem("Raccord C2", M_BEZ_JOIN_C2);
+        _menu.AddSeparator();
+        _menu.AddItem("Remplir courbe",  M_BEZ_FILL);
+        _menu.AddItem("Benchmark",       M_BEZ_BENCH);
+        _menu.AddSeparator();
+        _menu.AddItem("Translater (+10,+10)", M_BEZ_TRANSLATE);
+        _menu.AddItem("Rotation 15 deg",      M_BEZ_ROTATE);
+        _menu.AddItem("Scale x1.1",           M_BEZ_SCALE);
+        _menu.AddItem("Cisaillement shx=0.2", M_BEZ_SHEAR);
+    }
 
-		return true;
-	}
+    private void OnMenuPressed(long id)
+    {
+        switch ((int)id)
+        {
+            // Mode
+            case M_MODE_POLYGON: _mode = AppMode.Polygon; break;
+            case M_MODE_BEZIER:  _mode = AppMode.Bezier;  break;
+            case M_MODE_BSPLINE: _mode = AppMode.BSpline; break;
+            // Polygon
+            case M_POLY_RESET: _polyMgr.Reset(); break;
+            // Bezier
+            case M_BEZ_NEW:           _bezMgr.NewCurve();        break;
+            case M_BEZ_DELETE:        _bezMgr.DeleteActiveCurve(); break;
+            case M_BEZ_TOGGLE_MODE:   _bezMgr.ToggleEditMode();  break;
+            case M_BEZ_TOGGLE_METHOD: _bezMgr.ToggleMethod();    break;
+            case M_BEZ_STEP_UP:       _bezMgr.StepUp();          break;
+            case M_BEZ_STEP_DOWN:     _bezMgr.StepDown();        break;
+            case M_BEZ_JOIN_C0:       _bezMgr.JoinLastTwo(Continuity.C0); break;
+            case M_BEZ_JOIN_C1:       _bezMgr.JoinLastTwo(Continuity.C1); break;
+            case M_BEZ_JOIN_C2:       _bezMgr.JoinLastTwo(Continuity.C2); break;
+            case M_BEZ_FILL:          _bezMgr.FillActiveCurve(); break;
+            case M_BEZ_BENCH:         _bezMgr.RunBenchmark();    break;
+            case M_BEZ_TRANSLATE:
+                _bezMgr.ApplyTransform(Matrix3x3.Translation(10, 10)); break;
+            case M_BEZ_ROTATE:
+                _bezMgr.ApplyTransform(Matrix3x3.Rotation(Mathf.Pi / 12f)); break;
+            case M_BEZ_SCALE:
+                _bezMgr.ApplyTransform(Matrix3x3.Scaling(1.1f, 1.1f)); break;
+            case M_BEZ_SHEAR:
+                _bezMgr.ApplyTransform(Matrix3x3.Shearing(0.2f, 0f)); break;
+        }
+        QueueRedraw();
+    }
 
-	
-	List<Vector2> AlgoSH(List<Vector2> P, List<Vector2> F)
-	{
-		Vector2 S = new Vector2(), f = new Vector2(), I = new  Vector2();
-		List<Vector2> tempP = new List<Vector2>(P);
+    // ── HUD ──────────────────────────────────────────────────────────────
+    private void BuildHud()
+    {
+        var canvasLayer = new CanvasLayer();
+        AddChild(canvasLayer);
+        _hud = new Label();
+        _hud.Position = new Vector2(10, 10);
+        _hud.AddThemeFontSizeOverride("font_size", 14);
+        canvasLayer.AddChild(_hud);
+    }
 
-		for (int i = 0; i <= F.Count - 2; i++) {
-			List<Vector2> PS = new List<Vector2>();
-			for (int j = 0; j <= tempP.Count - 1; j++) {
-				if (j == 0) {
-					f = tempP[j];
-				}
-				else if (coupe(S, tempP[j], F[i], F[i+1])) {
-					I = intersection(S, tempP[j], F[i], F[i+1]);
-					PS.Add(I);
-				}
-				S = tempP[j];
-				if (visible(S, F[i], F[i+1])) {
-					PS.Add(S);
-				}
-			}
-
-			if (PS.Count > 0) {
-				if (coupe(S, f, F[i], F[i+1])) {
-					I = intersection(S, f, F[i], F[i+1]);
-					PS.Add(I);
-				}
-
-				tempP = new List<Vector2>(PS);
-			}
-		}
-		return tempP;
-	}
-
-	//retourne un booléen si S est visible par rapport à la droite (F1F2)
-	bool visible(Vector2 S, Vector2 F1, Vector2 F2) {
-		//Vecteur F1F2
-		Vector2 F1F2 = new Vector2(F2.X - F1.X, F2.Y - F1.Y);
-		//Vecteur F1S
-		Vector2 F1S = new Vector2(S.X - F1.X, S.Y - F1.Y);
-		return (F1S.X * F1F2.Y - F1S.Y * F1F2.X) > 0;
-	}
-
-	// retourne un booléen suivant l'intersection possible entre le côté [SP] du polygone et le bord prolongé (une droite) (F1F2) de la fenêtre
-	bool coupe(Vector2 S, Vector2 P, Vector2 F1, Vector2 F2) {
-		return visible(S, F1, F2) ^ visible(P, F1, F2);
-	}
-
-	// retourne le point d'intersection entre le segement [SP] et la droite (F1F2)
-	Vector2 intersection(Vector2 P1, Vector2 P2, Vector2 P3, Vector2 P4) {
-		//Matrice A
-		int a = (int)(P2.X - P1.X), b = (int)(P3.X - P4.X);
-		int c = (int)(P2.Y - P1.Y), d = (int)(P3.Y - P4.Y);
-		//
-		
-		float detA = a*d - b*c;
-		if (detA == 0) {
-			return P1;
-		}
-		//Matrice A^-1
-		List<List<float>> X = new List<List<float>>()
-		{
-			new List<float>() { d/detA , (-b)/detA },
-			new List<float>() { (-c)/detA , a/detA }
-		};
-		
-		int BX = (int)(P3.X - P1.X);
-		int BY = (int)(P3.Y - P1.Y);
-		float t = X[0][0] * BX + X[0][1] * BY;
-		Vector2 Result = new Vector2(P1.X + (P2.X * t) - (P1.X * t) , P1.Y + (P2.Y * t) - (P1.Y * t) );
-		return Result;
-
-	}
-
-	
+    private void UpdateHud()
+    {
+        _hud.Text = _mode switch
+        {
+            AppMode.Polygon => string.Format("MODE: POLYGONE\n{0}", _polyMgr.StatusText),
+            AppMode.Bezier  => _bezMgr.StatusText,
+            _               => "MODE: BSPLINE\n(coming soon)"
+        };
+    }
 }
