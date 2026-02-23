@@ -11,8 +11,9 @@ namespace PolyMaths.Algorithms
     public class BezierCurve
     {
         private readonly List<Point2D> _controlPoints = new List<Point2D>();
-        private long[] _pascalRow;   // Cached binomial coefficients C(n, i)
-        private bool _dirty = true;  // True when degree changed → Pascal cache invalid
+        private long[][] _pascalTriangle; // Full Pascal's triangle up to current degree
+        private long[] _pascalRow;        // Current degree row: C(n,0)..C(n,n)
+        private bool _dirty = true;       // True when degree changed → triangle cache invalid
 
         // ── Public properties ────────────────────────────────────────────────
         public IReadOnlyList<Point2D> ControlPoints => _controlPoints;
@@ -31,13 +32,27 @@ namespace PolyMaths.Algorithms
         }
 
         // ── Pascal's triangle cache ──────────────────────────────────────────
+        /// <summary>
+        /// Builds the full Pascal's triangle up to row n using the additive rule:
+        ///   T[i][0] = T[i][i] = 1
+        ///   T[i][j] = T[i-1][j-1] + T[i-1][j]   (1 ≤ j ≤ i-1)
+        /// The n-th row gives binomial coefficients C(n,0)..C(n,n).
+        /// </summary>
         private void RebuildPascal()
         {
             int n = Degree;
-            _pascalRow = new long[n + 1];
-            _pascalRow[0] = 1;
-            for (int i = 1; i <= n; i++)
-                _pascalRow[i] = _pascalRow[i - 1] * (n - i + 1) / i;
+            _pascalTriangle = new long[n + 1][];
+
+            for (int i = 0; i <= n; i++)
+            {
+                _pascalTriangle[i] = new long[i + 1];
+                _pascalTriangle[i][0] = 1;
+                _pascalTriangle[i][i] = 1;
+                for (int j = 1; j < i; j++)
+                    _pascalTriangle[i][j] = _pascalTriangle[i - 1][j - 1] + _pascalTriangle[i - 1][j];
+            }
+
+            _pascalRow = _pascalTriangle[n]; // C(n,0), C(n,1), ..., C(n,n)
             _dirty = false;
         }
 
