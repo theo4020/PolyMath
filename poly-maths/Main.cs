@@ -9,9 +9,9 @@ public partial class Main : Node2D
     private AppMode _mode = AppMode.Polygon;
 
     // ── Managers ─────────────────────────────────────────────────────────
-    private PolygonManager _polyMgr = new PolygonManager();
-    private BezierManager  _bezMgr  = new BezierManager();
-    // BSplineManager added in Task 9
+    private PolygonManager  _polyMgr = new PolygonManager();
+    private BezierManager   _bezMgr  = new BezierManager();
+    private BSplineManager  _bspMgr  = new BSplineManager();
 
     // ── Menu ─────────────────────────────────────────────────────────────
     private PopupMenu _menu;
@@ -40,6 +40,23 @@ public partial class Main : Node2D
     private const int M_BEZ_ROTATE       = 32;
     private const int M_BEZ_SCALE        = 33;
     private const int M_BEZ_SHEAR        = 34;
+    // BSpline
+    private const int M_BS_NEW            = 40;
+    private const int M_BS_NURBS          = 41;
+    private const int M_BS_DEG_UP         = 42;
+    private const int M_BS_DEG_DOWN       = 43;
+    private const int M_BS_KNOTS          = 44;
+    private const int M_BS_EDIT           = 45;
+    private const int M_BS_STEP_UP        = 46;
+    private const int M_BS_STEP_DOWN      = 47;
+    private const int M_BS_TRANSLATE      = 48;
+    private const int M_BS_ROTATE         = 49;
+    private const int M_BS_SCALE          = 50;
+    private const int M_BS_SHEAR          = 51;
+    private const int M_BS_DEMO_CIRCLE    = 52;
+    private const int M_BS_DEMO_ELLIPSE   = 53;
+    private const int M_BS_DEMO_PARABOLA  = 54;
+    private const int M_BS_DEMO_HYPERBOLA = 55;
 
     // ── Lifecycle ────────────────────────────────────────────────────────
     public override void _Ready()
@@ -68,10 +85,21 @@ public partial class Main : Node2D
         // Mouse drag (must poll every frame)
         if (_mode == AppMode.Bezier && Input.IsMouseButtonPressed(MouseButton.Left))
             _bezMgr.HandleMouseMove(GetViewport().GetMousePosition());
+        if (_mode == AppMode.BSpline && Input.IsMouseButtonPressed(MouseButton.Left))
+            _bspMgr.HandleMouseMove(GetViewport().GetMousePosition());
+
+        // BSpline key handling
+        if (_mode == AppMode.BSpline)
+        {
+            if (Input.IsKeyJustPressed(Key.Plus)  || Input.IsKeyJustPressed(Key.KpAdd))      _bspMgr.StepUp();
+            if (Input.IsKeyJustPressed(Key.Minus) || Input.IsKeyJustPressed(Key.KpSubtract)) _bspMgr.StepDown();
+            if (Input.IsKeyJustPressed(Key.Delete))  _bspMgr.HandleDelete();
+        }
 
         // Clicks
         if (Input.IsActionJustPressed("ClicGauche"))  HandleLeftClick();
         if (Input.IsActionJustReleased("ClicGauche")) _bezMgr.HandleLeftRelease();
+        if (Input.IsActionJustReleased("ClicGauche") && _mode == AppMode.BSpline) _bspMgr.HandleLeftRelease();
         if (Input.IsActionJustPressed("ClicDroit"))   HandleRightClick();
 
         UpdateHud();
@@ -85,6 +113,7 @@ public partial class Main : Node2D
         {
             case AppMode.Polygon: _polyMgr.HandleLeftClick(mouse); break;
             case AppMode.Bezier:  _bezMgr.HandleLeftClick(mouse);  break;
+            case AppMode.BSpline: _bspMgr.HandleLeftClick(mouse);  break;
         }
     }
 
@@ -107,6 +136,7 @@ public partial class Main : Node2D
         {
             case AppMode.Polygon: _polyMgr.Draw(this); break;
             case AppMode.Bezier:  _bezMgr.Draw(this);  break;
+            case AppMode.BSpline: _bspMgr.Draw(this);  break;
         }
     }
 
@@ -149,6 +179,28 @@ public partial class Main : Node2D
         _menu.AddItem("Rotation 15 deg",      M_BEZ_ROTATE);
         _menu.AddItem("Scale x1.1",           M_BEZ_SCALE);
         _menu.AddItem("Cisaillement shx=0.2", M_BEZ_SHEAR);
+        _menu.AddSeparator();
+        // BSpline items
+        _menu.AddItem("Nouvelle BSpline",     M_BS_NEW);
+        _menu.AddItem("Nouveau NURBS",        M_BS_NURBS);
+        _menu.AddSeparator();
+        _menu.AddItem("Degré +",              M_BS_DEG_UP);
+        _menu.AddItem("Degré -",              M_BS_DEG_DOWN);
+        _menu.AddItem("Nœuds: toggle",        M_BS_KNOTS);
+        _menu.AddItem("Toggle Edit BSpline",  M_BS_EDIT);
+        _menu.AddSeparator();
+        _menu.AddItem("Pas + (BS)",           M_BS_STEP_UP);
+        _menu.AddItem("Pas - (BS)",           M_BS_STEP_DOWN);
+        _menu.AddSeparator();
+        _menu.AddItem("Translater BS (+10,+10)", M_BS_TRANSLATE);
+        _menu.AddItem("Rotation BS 15°",         M_BS_ROTATE);
+        _menu.AddItem("Scale BS x1.1",           M_BS_SCALE);
+        _menu.AddItem("Cisaillement BS shx=0.2", M_BS_SHEAR);
+        _menu.AddSeparator();
+        _menu.AddItem("Demo: Cercle",         M_BS_DEMO_CIRCLE);
+        _menu.AddItem("Demo: Ellipse",        M_BS_DEMO_ELLIPSE);
+        _menu.AddItem("Demo: Parabole",       M_BS_DEMO_PARABOLA);
+        _menu.AddItem("Demo: Hyperbole",      M_BS_DEMO_HYPERBOLA);
     }
 
     private void OnMenuPressed(long id)
@@ -181,6 +233,27 @@ public partial class Main : Node2D
                 _bezMgr.ApplyTransform(Matrix3x3.Scaling(1.1f, 1.1f)); break;
             case M_BEZ_SHEAR:
                 _bezMgr.ApplyTransform(Matrix3x3.Shearing(0.2f, 0f)); break;
+            // BSpline
+            case M_BS_NEW:            _bspMgr.NewBSpline();      break;
+            case M_BS_NURBS:          _bspMgr.NewNurbs();        break;
+            case M_BS_DEG_UP:         _bspMgr.DegreeUp();        break;
+            case M_BS_DEG_DOWN:       _bspMgr.DegreeDown();      break;
+            case M_BS_KNOTS:          _bspMgr.ToggleKnots();     break;
+            case M_BS_EDIT:           _bspMgr.ToggleEditMode();  break;
+            case M_BS_STEP_UP:        _bspMgr.StepUp();          break;
+            case M_BS_STEP_DOWN:      _bspMgr.StepDown();        break;
+            case M_BS_TRANSLATE:
+                _bspMgr.ApplyTransform(Matrix3x3.Translation(10, 10)); break;
+            case M_BS_ROTATE:
+                _bspMgr.ApplyTransform(Matrix3x3.Rotation(Mathf.Pi / 12f)); break;
+            case M_BS_SCALE:
+                _bspMgr.ApplyTransform(Matrix3x3.Scaling(1.1f, 1.1f)); break;
+            case M_BS_SHEAR:
+                _bspMgr.ApplyTransform(Matrix3x3.Shearing(0.2f, 0f)); break;
+            case M_BS_DEMO_CIRCLE:    _bspMgr.LoadDemoCircle();    break;
+            case M_BS_DEMO_ELLIPSE:   _bspMgr.LoadDemoEllipse();   break;
+            case M_BS_DEMO_PARABOLA:  _bspMgr.LoadDemoParabola();  break;
+            case M_BS_DEMO_HYPERBOLA: _bspMgr.LoadDemoHyperbola(); break;
         }
         QueueRedraw();
     }
@@ -202,7 +275,8 @@ public partial class Main : Node2D
         {
             AppMode.Polygon => string.Format("MODE: POLYGONE\n{0}", _polyMgr.StatusText),
             AppMode.Bezier  => _bezMgr.StatusText,
-            _               => "MODE: BSPLINE\n(coming soon)"
+            AppMode.BSpline => _bspMgr.StatusText,
+            _               => ""
         };
     }
 }
