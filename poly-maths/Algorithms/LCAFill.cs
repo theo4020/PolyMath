@@ -103,13 +103,12 @@ namespace PolyMaths.Algorithms
                 int yStart = (int)Math.Ceiling(yMin);
                 int yEndExcl = (int)Math.Ceiling(yMax);
 
-                if (yStart < yMinGlobal)
-                {
-                    xAtYMin += (yStart - yMin) * invSlope;
-                }
-
                 if (yStart >= yEndExcl)
                     continue;
+
+                // Advance x from the bottom vertex (yMin) to the first pixel scanline (yStart).
+                // Without this, every edge whose yMin is not an integer starts at the wrong x.
+                xAtYMin += (yStart - yMin) * invSlope;
 
                 var entry = new EdgeEntry(yEndExcl, xAtYMin, invSlope);
 
