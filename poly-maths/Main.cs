@@ -78,7 +78,18 @@ public partial class Main : Node2D
     // ── Lifecycle ────────────────────────────────────────────────────────
     public override void _Ready()
     {
-        // Propager les couleurs/tailles configurées dans l'inspecteur Godot
+        ApplyColors();
+        BuildMenu();
+        BuildHud();
+        BuildSidebar();
+        // Décommenter pour lancer les tests en console :
+        // new PolyMaths.Tests.PolygonTestSuite().RunAllTests();
+        // new PolyMaths.Tests.BezierTestSuite().RunAllTests();
+        // new PolyMaths.Tests.BSplineTestSuite().RunAllTests();
+    }
+
+    private void ApplyColors()
+    {
         _polyMgr.SubjectColor       = PolySubjectColor;
         _polyMgr.WindowColor        = PolyWindowColor;
         _polyMgr.ResultColor        = PolyResultColor;
@@ -93,14 +104,14 @@ public partial class Main : Node2D
         _bspMgr.CurveColor          = BsCurveColor;
         _bspMgr.ActiveColor         = BsActiveColor;
         _bspMgr.DotRadius           = DotRadius;
+    }
 
-        BuildMenu();
-        BuildHud();
-        BuildSidebar();
-        // Décommenter pour lancer les tests en console :
-        // new PolyMaths.Tests.PolygonTestSuite().RunAllTests();
-        // new PolyMaths.Tests.BezierTestSuite().RunAllTests();
-        // new PolyMaths.Tests.BSplineTestSuite().RunAllTests();
+    private void ResetAll()
+    {
+        _polyMgr = new PolygonManager();
+        _bezMgr  = new BezierManager();
+        _bspMgr  = new BSplineManager();
+        ApplyColors();
     }
 
     public override void _Process(double delta)
@@ -108,19 +119,22 @@ public partial class Main : Node2D
         if (Input.IsActionPressed("Quitter"))
             GetTree().Quit();
 
-        // Mouse drag (doit être sondé chaque frame)
+        // Mouse drag (sondé chaque frame)
         if (_mode == AppMode.Bezier  && Input.IsMouseButtonPressed(MouseButton.Left))
             _bezMgr.HandleMouseMove(GetViewport().GetMousePosition());
         if (_mode == AppMode.BSpline && Input.IsMouseButtonPressed(MouseButton.Left))
             _bspMgr.HandleMouseMove(GetViewport().GetMousePosition());
 
-        // Clics souris
-        if (Input.IsActionJustPressed("ClicGauche"))  HandleLeftClick();
-        if (Input.IsActionJustReleased("ClicGauche")) { _bezMgr.HandleLeftRelease(); _bspMgr.HandleLeftRelease(); }
-        if (Input.IsActionJustPressed("ClicDroit"))   HandleRightClick();
-
         UpdateHud();
         QueueRedraw();
+    }
+
+    // _UnhandledInput garantit que les clics sur les boutons UI ne traversent pas jusqu'au canvas
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        if (@event.IsActionPressed("ClicGauche"))  HandleLeftClick();
+        if (@event.IsActionReleased("ClicGauche")) { _bezMgr.HandleLeftRelease(); _bspMgr.HandleLeftRelease(); }
+        if (@event.IsActionPressed("ClicDroit"))   HandleRightClick();
     }
 
     // Input.IsKeyJustPressed n'existe pas en C# Godot 4 — on utilise _Input à la place
@@ -360,10 +374,14 @@ public partial class Main : Node2D
         vbox.Size     = new Vector2(137, 1068);
         panel.AddChild(vbox);
 
+        // ── Reset global ────────────────────────────────────────────────
+        SideBtn(vbox, "⟳ Reset tout",  () => { ResetAll(); _mode = AppMode.Polygon; });
+        vbox.AddChild(new HSeparator());
+
         // ── Mode ────────────────────────────────────────────────────────
         SideLabel(vbox, "── MODE ──");
-        SideBtn(vbox, "Polygone",      () => _mode = AppMode.Polygon);
-        SideBtn(vbox, "Bézier",        () => _mode = AppMode.Bezier);
+        SideBtn(vbox, "Polygone",       () => _mode = AppMode.Polygon);
+        SideBtn(vbox, "Bézier",         () => _mode = AppMode.Bezier);
         SideBtn(vbox, "BSpline / NURBS",() => _mode = AppMode.BSpline);
         vbox.AddChild(new HSeparator());
 
