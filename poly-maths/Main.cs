@@ -1,3 +1,4 @@
+using System;
 using Godot;
 using PolyMaths.Managers;
 using PolyMaths.Algorithms;
@@ -95,6 +96,7 @@ public partial class Main : Node2D
 
         BuildMenu();
         BuildHud();
+        BuildSidebar();
         // Décommenter pour lancer les tests en console :
         // new PolyMaths.Tests.PolygonTestSuite().RunAllTests();
         // new PolyMaths.Tests.BezierTestSuite().RunAllTests();
@@ -339,6 +341,87 @@ public partial class Main : Node2D
         _hud.Position = new Vector2(10, 10);
         _hud.AddThemeFontSizeOverride("font_size", 14);
         canvasLayer.AddChild(_hud);
+    }
+
+    // ── Sidebar ───────────────────────────────────────────────────────────
+    private void BuildSidebar()
+    {
+        var layer = new CanvasLayer();
+        layer.Layer = 10;
+        AddChild(layer);
+
+        var panel = new Panel();
+        panel.Position = new Vector2(1775, 0);
+        panel.Size     = new Vector2(145, 1080);
+        layer.AddChild(panel);
+
+        var vbox = new VBoxContainer();
+        vbox.Position = new Vector2(4, 6);
+        vbox.Size     = new Vector2(137, 1068);
+        panel.AddChild(vbox);
+
+        // ── Mode ────────────────────────────────────────────────────────
+        SideLabel(vbox, "── MODE ──");
+        SideBtn(vbox, "Polygone",      () => _mode = AppMode.Polygon);
+        SideBtn(vbox, "Bézier",        () => _mode = AppMode.Bezier);
+        SideBtn(vbox, "BSpline / NURBS",() => _mode = AppMode.BSpline);
+        vbox.AddChild(new HSeparator());
+
+        // ── Bézier ──────────────────────────────────────────────────────
+        SideLabel(vbox, "── BÉZIER ──");
+        SideBtn(vbox, "+ Courbe",       () => { _mode = AppMode.Bezier;  _bezMgr.NewCurve(); });
+        SideBtn(vbox, "Édition / Ajout",() => _bezMgr.ToggleEditMode());
+        SideBtn(vbox, "Suppr. courbe",  () => _bezMgr.DeleteActiveCurve());
+        SideBtn(vbox, "Méthode",        () => _bezMgr.ToggleMethod());
+        SideBtn(vbox, "Raccord C0",     () => _bezMgr.JoinLastTwo(Continuity.C0));
+        SideBtn(vbox, "Raccord C1",     () => _bezMgr.JoinLastTwo(Continuity.C1));
+        SideBtn(vbox, "Raccord C2",     () => _bezMgr.JoinLastTwo(Continuity.C2));
+        SideBtn(vbox, "Remplir",        () => _bezMgr.FillActiveCurve());
+        vbox.AddChild(new HSeparator());
+
+        // ── BSpline ─────────────────────────────────────────────────────
+        SideLabel(vbox, "── BSPLINE ──");
+        SideBtn(vbox, "+ BSpline",      () => { _mode = AppMode.BSpline; _bspMgr.NewBSpline(); });
+        SideBtn(vbox, "+ NURBS",        () => { _mode = AppMode.BSpline; _bspMgr.NewNurbs(); });
+        SideBtn(vbox, "Édition / Ajout",() => _bspMgr.ToggleEditMode());
+        SideBtn(vbox, "Degré +",        () => _bspMgr.DegreeUp());
+        SideBtn(vbox, "Degré -",        () => _bspMgr.DegreeDown());
+        SideBtn(vbox, "Nœuds",          () => _bspMgr.ToggleKnots());
+        SideBtn(vbox, "Cercle",         () => { _mode = AppMode.BSpline; _bspMgr.LoadDemoCircle(); });
+        SideBtn(vbox, "Ellipse",        () => { _mode = AppMode.BSpline; _bspMgr.LoadDemoEllipse(); });
+        SideBtn(vbox, "Parabole",       () => { _mode = AppMode.BSpline; _bspMgr.LoadDemoParabola(); });
+        SideBtn(vbox, "Hyperbole",      () => { _mode = AppMode.BSpline; _bspMgr.LoadDemoHyperbola(); });
+        vbox.AddChild(new HSeparator());
+
+        // ── Polygone ────────────────────────────────────────────────────
+        SideLabel(vbox, "── POLYGONE ──");
+        SideBtn(vbox, "Reset",          () => _polyMgr.Reset());
+        vbox.AddChild(new HSeparator());
+
+        // ── Hint ────────────────────────────────────────────────────────
+        var hint = new Label();
+        hint.Text = "Clic droit\n= menu complet";
+        hint.HorizontalAlignment = HorizontalAlignment.Center;
+        hint.AddThemeFontSizeOverride("font_size", 11);
+        vbox.AddChild(hint);
+    }
+
+    private static void SideLabel(VBoxContainer parent, string text)
+    {
+        var lbl = new Label();
+        lbl.Text = text;
+        lbl.HorizontalAlignment = HorizontalAlignment.Center;
+        lbl.AddThemeFontSizeOverride("font_size", 11);
+        parent.AddChild(lbl);
+    }
+
+    private static void SideBtn(VBoxContainer parent, string text, Action action)
+    {
+        var btn = new Button();
+        btn.Text = text;
+        btn.AddThemeFontSizeOverride("font_size", 12);
+        btn.Pressed += action;
+        parent.AddChild(btn);
     }
 
     private void UpdateHud()
