@@ -19,9 +19,6 @@ namespace PolyMaths.Managers
         private bool   _useCasteljau = false;
         private string _benchText    = "";
 
-        // ── Fill state ───────────────────────────────────────────────────────
-        private List<(Point2D, Point2D)> _fillSegs = new List<(Point2D, Point2D)>();
-
         // ── Multi-selection ──────────────────────────────────────────────────
         private HashSet<BezierCurve> _multiSelected = new HashSet<BezierCurve>();
         public int MultiSelectedCount => _multiSelected.Count;
@@ -126,7 +123,6 @@ namespace PolyMaths.Managers
             var curve = new BezierCurve();
             _activeNode = _curves.AddLast(curve);
             _editMode = false;
-            _fillSegs.Clear();
         }
 
         public void DeleteActiveCurve()
@@ -136,7 +132,6 @@ namespace PolyMaths.Managers
             var next = _activeNode.Next ?? _activeNode.Previous;
             _curves.Remove(_activeNode);
             _activeNode = next;
-            _fillSegs.Clear();
         }
 
         /// <summary>Toggle the active curve in/out of the multi-selection set.</summary>
@@ -168,7 +163,6 @@ namespace PolyMaths.Managers
             }
             _multiSelected.Clear();
             _activeNode = newActive;
-            _fillSegs.Clear();
         }
 
         /// <summary>Delete every curve.</summary>
@@ -177,7 +171,6 @@ namespace PolyMaths.Managers
             _curves.Clear();
             _activeNode = null;
             _multiSelected.Clear();
-            _fillSegs.Clear();
         }
 
         public void SelectNext()
@@ -248,28 +241,16 @@ namespace PolyMaths.Managers
         }
 
         // ── Fill ─────────────────────────────────────────────────────────────
+        /// <summary>Toggle scanline fill on the active curve. Stays in sync automatically.</summary>
         public void FillActiveCurve()
         {
-            _fillSegs.Clear();
             if (_activeNode == null) return;
-            var pts = _activeNode.Value.GetPoints(_useCasteljau);
-            if (pts.Count < 3) return;
-
-            var poly   = new Polygon(pts);
-            var filler = new LCAFill();
-            var segs   = filler.FillPolygon(poly);
-            foreach (var s in segs)
-                _fillSegs.Add((s.Item1, s.Item2));
+            _activeNode.Value.FillEnabled = !_activeNode.Value.FillEnabled;
         }
 
         // ── Drawing ──────────────────────────────────────────────────────────
         public void Draw(Node2D canvas)
         {
-            // Draw fill scanlines first (behind curves)
-            foreach (var (a, b) in _fillSegs)
-                canvas.DrawLine(P(a), P(b), FillColor, 1);
-
-            // Draw all curves
             var node = _curves.First;
             while (node != null)
             {
@@ -283,6 +264,17 @@ namespace PolyMaths.Managers
             var pts = curve.ControlPoints;
             Color cc = isActive ? ActiveCurveColor : (isMarked ? MarkedCurveColor : CurveColor);
 
+            // Evaluate curve points once (used for both fill and outline)
+            var curvePts = pts.Count >= 2 ? curve.GetPoints(_useCasteljau) : null;
+
+            // Scanline fill — recomputed each frame so it tracks control-point drags
+            if (curve.FillEnabled && curvePts != null && curvePts.Count >= 3)
+            {
+                var segs = new LCAFill().FillPolygon(new Polygon(curvePts));
+                foreach (var s in segs)
+                    canvas.DrawLine(P(s.Item1), P(s.Item2), FillColor, 1);
+            }
+
             // Control polygon (thin gray lines)
             for (int i = 0; i < pts.Count - 1; i++)
                 canvas.DrawLine(P(pts[i]), P(pts[i + 1]), ControlPolygonColor, 1);
@@ -294,13 +286,10 @@ namespace PolyMaths.Managers
                 canvas.DrawCircle(P(pts[i]), DotRadius, sel ? SelectedPointColor : Colors.Black);
             }
 
-            // Curve segments
-            if (pts.Count >= 2)
-            {
-                var curvePts = curve.GetPoints(_useCasteljau);
+            // Curve outline
+            if (curvePts != null)
                 for (int i = 0; i < curvePts.Count - 1; i++)
                     canvas.DrawLine(P(curvePts[i]), P(curvePts[i + 1]), cc, 2);
-            }
         }
 
         // ── Helpers ──────────────────────────────────────────────────────────

@@ -17,8 +17,9 @@ namespace PolyMaths.Algorithms
 
         // ── Public properties ────────────────────────────────────────────────
         public IReadOnlyList<Point2D> ControlPoints => _controlPoints;
-        public int Step { get; set; } = 100;
-        public int Degree => _controlPoints.Count - 1;
+        public int  Step        { get; set; } = 100;
+        public bool FillEnabled { get; set; } = false;
+        public int  Degree => _controlPoints.Count - 1;
 
         // ── Control point management ─────────────────────────────────────────
         public void AddPoint(Point2D p)        { _controlPoints.Add(p);              _dirty = true; }
