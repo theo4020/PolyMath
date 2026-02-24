@@ -47,7 +47,7 @@ namespace PolyMaths.Managers
                 return string.Format(
                     "BEZIER | Mode:{0} | Méthode:{1} | Pas:{2} | Courbes:{3}{4}\n{5}\n{6}",
                     mode, method, step, curveCount, mark,
-                    _editMode ? "ClicG=sélect  Glisser=déplacer  Suppr=retirer  [Espace]=marquer"
+                    _editMode ? "ClicG=sélect/insérer  DblClic=suppr pt  Glisser=déplacer  Suppr=retirer  [Espace]=marquer"
                               : "ClicG=ajouter  ClicD=menu  [↑↓←→] Trans  [R] Rot  [S] Éch  [H] Cis  [Espace]=marquer",
                     _benchText);
             }
@@ -63,7 +63,7 @@ namespace PolyMaths.Managers
                 return;
             }
 
-            // Edit mode: try to select nearest vertex on any curve
+            // Edit mode — priority 1: select nearest existing control point
             _dragIndex = -1;
             _dragging  = false;
             var node = _curves.First;
@@ -76,6 +76,47 @@ namespace PolyMaths.Managers
                         _activeNode = node;
                         _dragIndex  = i;
                         _dragging   = true;
+                        return;
+                    }
+                }
+                node = node.Next;
+            }
+
+            // Edit mode — priority 2: click on a control-polygon edge → insert point there
+            node = _curves.First;
+            while (node != null)
+            {
+                var pts = node.Value.ControlPoints;
+                for (int i = 0; i < pts.Count - 1; i++)
+                {
+                    if (DistancePointToSegment(mouse, P(pts[i]), P(pts[i + 1])) <= SELECT_THRESHOLD)
+                    {
+                        _activeNode = node;
+                        node.Value.InsertPoint(i + 1, V(mouse));
+                        _dragIndex = i + 1;
+                        _dragging  = true;
+                        return;
+                    }
+                }
+                node = node.Next;
+            }
+        }
+
+        /// <summary>Double-click in edit mode: delete the point under the cursor.</summary>
+        public void HandleDoubleClick(Vector2 mouse)
+        {
+            if (!_editMode) return;
+            var node = _curves.First;
+            while (node != null)
+            {
+                for (int i = 0; i < node.Value.ControlPoints.Count; i++)
+                {
+                    if (P(node.Value.ControlPoints[i]).DistanceTo(mouse) <= SELECT_THRESHOLD)
+                    {
+                        _activeNode = node;
+                        node.Value.RemovePoint(i);
+                        _dragIndex = -1;
+                        _dragging  = false;
                         return;
                     }
                 }
@@ -316,5 +357,15 @@ namespace PolyMaths.Managers
         // ── Helpers ──────────────────────────────────────────────────────────
         private static Point2D V(Vector2 v) => new Point2D(v.X, v.Y);
         private static Vector2  P(Point2D p) => new Vector2(p.x, p.y);
+
+        /// <summary>Shortest distance from point <paramref name="p"/> to segment [a,b].</summary>
+        private static float DistancePointToSegment(Vector2 p, Vector2 a, Vector2 b)
+        {
+            Vector2 ab = b - a;
+            float len2 = ab.LengthSquared();
+            if (len2 < 1e-6f) return p.DistanceTo(a);
+            float t = Mathf.Clamp((p - a).Dot(ab) / len2, 0f, 1f);
+            return p.DistanceTo(a + ab * t);
+        }
     }
 }

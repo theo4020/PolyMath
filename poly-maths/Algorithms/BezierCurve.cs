@@ -22,9 +22,10 @@ namespace PolyMaths.Algorithms
         public int  Degree => _controlPoints.Count - 1;
 
         // ── Control point management ─────────────────────────────────────────
-        public void AddPoint(Point2D p)        { _controlPoints.Add(p);              _dirty = true; }
-        public void RemovePoint(int i)         { _controlPoints.RemoveAt(i);         _dirty = true; }
-        public void MovePoint(int i, Point2D p){ _controlPoints[i] = p; /* Pascal unaffected by position change */ }
+        public void AddPoint(Point2D p)             { _controlPoints.Add(p);              _dirty = true; }
+        public void InsertPoint(int index, Point2D p){ _controlPoints.Insert(index, p);     _dirty = true; }
+        public void RemovePoint(int i)              { _controlPoints.RemoveAt(i);          _dirty = true; }
+        public void MovePoint(int i, Point2D p)     { _controlPoints[i] = p; /* Pascal unaffected */ }
 
         public void ApplyTransform(Matrix3x3 m)
         {

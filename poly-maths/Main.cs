@@ -137,6 +137,14 @@ public partial class Main : Node2D
     // _UnhandledInput garantit que les clics sur les boutons UI ne traversent pas jusqu'au canvas
     public override void _UnhandledInput(InputEvent @event)
     {
+        // Double-clic gauche en mode Bézier → supprimer le point sous le curseur
+        if (@event is InputEventMouseButton mb && mb.ButtonIndex == MouseButton.Left && mb.DoubleClick)
+        {
+            if (_mode == AppMode.Bezier)
+                _bezMgr.HandleDoubleClick(GetViewport().GetMousePosition());
+            return;   // ne pas traiter aussi comme simple clic
+        }
+
         if (@event.IsActionPressed("ClicGauche"))  HandleLeftClick();
         if (@event.IsActionReleased("ClicGauche")) { _bezMgr.HandleLeftRelease(); _bspMgr.HandleLeftRelease(); }
         if (@event.IsActionPressed("ClicDroit"))   HandleRightClick();
