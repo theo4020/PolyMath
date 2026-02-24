@@ -13,6 +13,22 @@ public partial class Main : Node2D
     private BezierManager   _bezMgr  = new BezierManager();
     private BSplineManager  _bspMgr  = new BSplineManager();
 
+    // ── Inspector exports (visibles dans l'éditeur Godot) ────────────────
+    // Couleurs – Polygone
+    [Export] public Color PolySubjectColor { get; set; } = new Color(0.2f, 0.6f, 1f);
+    [Export] public Color PolyWindowColor  { get; set; } = new Color(1f, 0.6f, 0.1f);
+    [Export] public Color PolyResultColor  { get; set; } = new Color(0.2f, 0.9f, 0.3f);
+    // Couleurs – Bézier
+    [Export] public Color BezControlColor  { get; set; } = new Color(0.5f, 0.5f, 0.5f);
+    [Export] public Color BezCurveColor    { get; set; } = new Color(0.2f, 0.6f, 1f);
+    [Export] public Color BezActiveColor   { get; set; } = new Color(1f, 0.3f, 0.3f);
+    // Couleurs – BSpline / NURBS
+    [Export] public Color BsControlColor   { get; set; } = new Color(0.5f, 0.5f, 0.5f);
+    [Export] public Color BsCurveColor     { get; set; } = new Color(0.2f, 0.9f, 0.5f);
+    [Export] public Color BsActiveColor    { get; set; } = new Color(1f, 0.5f, 0f);
+    // Géométrie commune
+    [Export] public int   DotRadius        { get; set; } = 5;
+
     // ── Menu ─────────────────────────────────────────────────────────────
     private PopupMenu _menu;
     private Label     _hud;
@@ -61,9 +77,25 @@ public partial class Main : Node2D
     // ── Lifecycle ────────────────────────────────────────────────────────
     public override void _Ready()
     {
+        // Propager les couleurs/tailles configurées dans l'inspecteur Godot
+        _polyMgr.SubjectColor       = PolySubjectColor;
+        _polyMgr.WindowColor        = PolyWindowColor;
+        _polyMgr.ResultColor        = PolyResultColor;
+        _polyMgr.DotRadius          = DotRadius;
+
+        _bezMgr.ControlPolygonColor = BezControlColor;
+        _bezMgr.CurveColor          = BezCurveColor;
+        _bezMgr.ActiveCurveColor    = BezActiveColor;
+        _bezMgr.DotRadius           = DotRadius;
+
+        _bspMgr.ControlColor        = BsControlColor;
+        _bspMgr.CurveColor          = BsCurveColor;
+        _bspMgr.ActiveColor         = BsActiveColor;
+        _bspMgr.DotRadius           = DotRadius;
+
         BuildMenu();
         BuildHud();
-        // Uncomment to run tests:
+        // Décommenter pour lancer les tests en console :
         // new PolyMaths.Tests.PolygonTestSuite().RunAllTests();
         // new PolyMaths.Tests.BezierTestSuite().RunAllTests();
         // new PolyMaths.Tests.BSplineTestSuite().RunAllTests();
