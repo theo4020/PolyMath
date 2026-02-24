@@ -37,13 +37,13 @@ namespace PolyMaths.Managers
             get
             {
                 string method = _useCasteljau ? "Casteljau" : "Direct";
-                string mode   = _editMode ? "EDIT" : "APPEND";
+                string mode   = _editMode ? "ÉDITION" : "AJOUT";
                 int step = _activeNode?.Value.Step ?? 0;
                 int curveCount = _curves.Count;
                 return string.Format(
-                    "BEZIER | Mode:{0} | Methode:{1} | Pas:{2} | Courbes:{3}\n{4}\n{5}",
+                    "BEZIER | Mode:{0} | Méthode:{1} | Pas:{2} | Courbes:{3}\n{4}\n{5}",
                     mode, method, step, curveCount,
-                    _editMode ? "LClick=select  Drag=move  Del=remove point" : "LClick=add point  RClick=menu",
+                    _editMode ? "ClicG=sélect  Glisser=déplacer  Suppr=retirer" : "ClicG=ajouter point  ClicD=menu  [↑↓←→] Translater  [R] Rotation  [S] Échelle  [H] Cisaillement",
                     _benchText);
             }
         }

@@ -97,6 +97,40 @@ public partial class Main : Node2D
             if (Input.IsKeyJustPressed(Key.Delete))  _bspMgr.HandleDelete();
         }
 
+        // ── Transformées matricielles clavier (Bézier & BSpline) ─────────────
+        // Flèches  → Translation ±10 px
+        // R / Maj+R → Rotation ±15°
+        // S / Maj+S → Échelle ×1.1 / ×0.9
+        // H / Maj+H → Cisaillement shx ±0.1
+        if (_mode == AppMode.Bezier || _mode == AppMode.BSpline)
+        {
+            bool shift = Input.IsKeyPressed(Key.Shift);
+
+            // Translation par flèches
+            if (Input.IsKeyJustPressed(Key.Right)) ApplyTransform(Matrix3x3.Translation( 10,   0));
+            if (Input.IsKeyJustPressed(Key.Left))  ApplyTransform(Matrix3x3.Translation(-10,   0));
+            if (Input.IsKeyJustPressed(Key.Down))  ApplyTransform(Matrix3x3.Translation(  0,  10));
+            if (Input.IsKeyJustPressed(Key.Up))    ApplyTransform(Matrix3x3.Translation(  0, -10));
+
+            // Rotation
+            if (Input.IsKeyJustPressed(Key.R))
+                ApplyTransform(shift
+                    ? Matrix3x3.Rotation(-Mathf.Pi / 12f)
+                    :  Matrix3x3.Rotation( Mathf.Pi / 12f));
+
+            // Échelle
+            if (Input.IsKeyJustPressed(Key.S))
+                ApplyTransform(shift
+                    ? Matrix3x3.Scaling(1f / 1.1f, 1f / 1.1f)
+                    : Matrix3x3.Scaling(1.1f, 1.1f));
+
+            // Cisaillement
+            if (Input.IsKeyJustPressed(Key.H))
+                ApplyTransform(shift
+                    ? Matrix3x3.Shearing(-0.1f, 0f)
+                    : Matrix3x3.Shearing( 0.1f, 0f));
+        }
+
         // Clicks
         if (Input.IsActionJustPressed("ClicGauche"))  HandleLeftClick();
         if (Input.IsActionJustReleased("ClicGauche")) _bezMgr.HandleLeftRelease();
@@ -116,6 +150,13 @@ public partial class Main : Node2D
             case AppMode.Bezier:  _bezMgr.HandleLeftClick(mouse);  break;
             case AppMode.BSpline: _bspMgr.HandleLeftClick(mouse);  break;
         }
+    }
+
+    /// <summary>Dispatche une transformée matricielle vers le manager actif.</summary>
+    private void ApplyTransform(Matrix3x3 m)
+    {
+        if (_mode == AppMode.Bezier)  _bezMgr.ApplyTransform(m);
+        if (_mode == AppMode.BSpline) _bspMgr.ApplyTransform(m);
     }
 
     private void HandleRightClick()
@@ -163,8 +204,8 @@ public partial class Main : Node2D
         _menu.AddItem("Nouvelle courbe",          M_BEZ_NEW);
         _menu.AddItem("Supprimer courbe active",   M_BEZ_DELETE);
         _menu.AddSeparator();
-        _menu.AddItem("Toggle Edit / Append",      M_BEZ_TOGGLE_MODE);
-        _menu.AddItem("Toggle Direct / Casteljau", M_BEZ_TOGGLE_METHOD);
+        _menu.AddItem("Basculer: Édition / Ajout",    M_BEZ_TOGGLE_MODE);
+        _menu.AddItem("Basculer: Direct / Casteljau", M_BEZ_TOGGLE_METHOD);
         _menu.AddSeparator();
         _menu.AddItem("Pas +",  M_BEZ_STEP_UP);
         _menu.AddItem("Pas -",  M_BEZ_STEP_DOWN);
@@ -177,8 +218,8 @@ public partial class Main : Node2D
         _menu.AddItem("Benchmark",       M_BEZ_BENCH);
         _menu.AddSeparator();
         _menu.AddItem("Translater (+10,+10)", M_BEZ_TRANSLATE);
-        _menu.AddItem("Rotation 15 deg",      M_BEZ_ROTATE);
-        _menu.AddItem("Scale x1.1",           M_BEZ_SCALE);
+        _menu.AddItem("Rotation 15°",          M_BEZ_ROTATE);
+        _menu.AddItem("Échelle x1.1",         M_BEZ_SCALE);
         _menu.AddItem("Cisaillement shx=0.2", M_BEZ_SHEAR);
         _menu.AddSeparator();
         // BSpline items
@@ -187,8 +228,8 @@ public partial class Main : Node2D
         _menu.AddSeparator();
         _menu.AddItem("Degré +",              M_BS_DEG_UP);
         _menu.AddItem("Degré -",              M_BS_DEG_DOWN);
-        _menu.AddItem("Nœuds: toggle",        M_BS_KNOTS);
-        _menu.AddItem("Toggle Edit BSpline",  M_BS_EDIT);
+        _menu.AddItem("Nœuds: basculer",       M_BS_KNOTS);
+        _menu.AddItem("Basculer: Édition",    M_BS_EDIT);
         _menu.AddSeparator();
         _menu.AddItem("Pas + (BS)",           M_BS_STEP_UP);
         _menu.AddItem("Pas - (BS)",           M_BS_STEP_DOWN);

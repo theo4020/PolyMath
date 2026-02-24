@@ -30,13 +30,13 @@ namespace PolyMaths.Managers
                 string type = _nurbsMode ? "NURBS" : "BSpline";
                 int deg = ActiveCurve?.Degree ?? 0;
                 int cp  = ActiveCurve?.ControlPoints.Count ?? 0;
-                string knots = (ActiveCurve?.IsClamped ?? true) ? "Clamped" : "Uniform";
-                string mode  = _editMode ? "EDIT" : "APPEND";
+                string knots = (ActiveCurve?.IsClamped ?? true) ? "Serré" : "Uniforme";
+                string mode  = _editMode ? "ÉDITION" : "AJOUT";
                 return string.Format(
-                    "MODE: {0} | Degree:{1} | CP:{2} | Knots:{3} | {4}\nCourbes: {5}\n{6}",
+                    "MODE: {0} | Degré:{1} | CP:{2} | Nœuds:{3} | {4}\nCourbes: {5}\n{6}",
                     type, deg, cp, knots, mode,
                     _bsplines.Count + _nurbs.Count,
-                    _editMode ? "LClick=select  Drag=move  Del=remove" : "LClick=add point  RClick=menu");
+                    _editMode ? "ClicG=sélect  Glisser=déplacer  Suppr=retirer" : "ClicG=ajouter point  ClicD=menu  [↑↓←→] Translater  [R] Rotation  [S] Échelle  [H] Cisaillement");
             }
         }
 
