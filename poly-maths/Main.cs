@@ -66,6 +66,7 @@ public partial class Main : Node2D
         // Uncomment to run tests:
         // new PolyMaths.Tests.PolygonTestSuite().RunAllTests();
         // new PolyMaths.Tests.BezierTestSuite().RunAllTests();
+        // new PolyMaths.Tests.BSplineTestSuite().RunAllTests();
     }
 
     public override void _Process(double delta)
