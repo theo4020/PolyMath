@@ -106,71 +106,69 @@ public partial class Main : Node2D
         if (Input.IsActionPressed("Quitter"))
             GetTree().Quit();
 
-        // Keyboard step control (Bézier)
-        if (_mode == AppMode.Bezier)
-        {
-            if (Input.IsKeyJustPressed(Key.Plus)  || Input.IsKeyJustPressed(Key.KpAdd))      _bezMgr.StepUp();
-            if (Input.IsKeyJustPressed(Key.Minus) || Input.IsKeyJustPressed(Key.KpSubtract)) _bezMgr.StepDown();
-            if (Input.IsKeyJustPressed(Key.Delete))  _bezMgr.HandleDelete();
-            if (Input.IsKeyJustPressed(Key.Tab))     _bezMgr.SelectNext();
-        }
-
-        // Mouse drag (must poll every frame)
-        if (_mode == AppMode.Bezier && Input.IsMouseButtonPressed(MouseButton.Left))
+        // Mouse drag (doit être sondé chaque frame)
+        if (_mode == AppMode.Bezier  && Input.IsMouseButtonPressed(MouseButton.Left))
             _bezMgr.HandleMouseMove(GetViewport().GetMousePosition());
         if (_mode == AppMode.BSpline && Input.IsMouseButtonPressed(MouseButton.Left))
             _bspMgr.HandleMouseMove(GetViewport().GetMousePosition());
 
-        // BSpline key handling
-        if (_mode == AppMode.BSpline)
-        {
-            if (Input.IsKeyJustPressed(Key.Plus)  || Input.IsKeyJustPressed(Key.KpAdd))      _bspMgr.StepUp();
-            if (Input.IsKeyJustPressed(Key.Minus) || Input.IsKeyJustPressed(Key.KpSubtract)) _bspMgr.StepDown();
-            if (Input.IsKeyJustPressed(Key.Delete))  _bspMgr.HandleDelete();
-        }
-
-        // ── Transformées matricielles clavier (Bézier & BSpline) ─────────────
-        // Flèches  → Translation ±10 px
-        // R / Maj+R → Rotation ±15°
-        // S / Maj+S → Échelle ×1.1 / ×0.9
-        // H / Maj+H → Cisaillement shx ±0.1
-        if (_mode == AppMode.Bezier || _mode == AppMode.BSpline)
-        {
-            bool shift = Input.IsKeyPressed(Key.Shift);
-
-            // Translation par flèches
-            if (Input.IsKeyJustPressed(Key.Right)) ApplyTransform(Matrix3x3.Translation( 10,   0));
-            if (Input.IsKeyJustPressed(Key.Left))  ApplyTransform(Matrix3x3.Translation(-10,   0));
-            if (Input.IsKeyJustPressed(Key.Down))  ApplyTransform(Matrix3x3.Translation(  0,  10));
-            if (Input.IsKeyJustPressed(Key.Up))    ApplyTransform(Matrix3x3.Translation(  0, -10));
-
-            // Rotation
-            if (Input.IsKeyJustPressed(Key.R))
-                ApplyTransform(shift
-                    ? Matrix3x3.Rotation(-Mathf.Pi / 12f)
-                    :  Matrix3x3.Rotation( Mathf.Pi / 12f));
-
-            // Échelle
-            if (Input.IsKeyJustPressed(Key.S))
-                ApplyTransform(shift
-                    ? Matrix3x3.Scaling(1f / 1.1f, 1f / 1.1f)
-                    : Matrix3x3.Scaling(1.1f, 1.1f));
-
-            // Cisaillement
-            if (Input.IsKeyJustPressed(Key.H))
-                ApplyTransform(shift
-                    ? Matrix3x3.Shearing(-0.1f, 0f)
-                    : Matrix3x3.Shearing( 0.1f, 0f));
-        }
-
-        // Clicks
+        // Clics souris
         if (Input.IsActionJustPressed("ClicGauche"))  HandleLeftClick();
-        if (Input.IsActionJustReleased("ClicGauche")) _bezMgr.HandleLeftRelease();
-        if (Input.IsActionJustReleased("ClicGauche") && _mode == AppMode.BSpline) _bspMgr.HandleLeftRelease();
+        if (Input.IsActionJustReleased("ClicGauche")) { _bezMgr.HandleLeftRelease(); _bspMgr.HandleLeftRelease(); }
         if (Input.IsActionJustPressed("ClicDroit"))   HandleRightClick();
 
         UpdateHud();
         QueueRedraw();
+    }
+
+    // Input.IsKeyJustPressed n'existe pas en C# Godot 4 — on utilise _Input à la place
+    public override void _Input(InputEvent @event)
+    {
+        if (@event is not InputEventKey k) return;
+        if (!k.Pressed || k.Echo) return;   // uniquement la première pression, pas le repeat
+
+        bool shift = k.ShiftPressed;
+        var  key   = k.Keycode;
+
+        // ── Bézier ──────────────────────────────────────────────────────────
+        if (_mode == AppMode.Bezier)
+        {
+            if (key == Key.Plus  || key == Key.KpAdd)      _bezMgr.StepUp();
+            if (key == Key.Minus || key == Key.KpSubtract) _bezMgr.StepDown();
+            if (key == Key.Delete)                         _bezMgr.HandleDelete();
+            if (key == Key.Tab)                            _bezMgr.SelectNext();
+        }
+
+        // ── BSpline ─────────────────────────────────────────────────────────
+        if (_mode == AppMode.BSpline)
+        {
+            if (key == Key.Plus  || key == Key.KpAdd)      _bspMgr.StepUp();
+            if (key == Key.Minus || key == Key.KpSubtract) _bspMgr.StepDown();
+            if (key == Key.Delete)                         _bspMgr.HandleDelete();
+        }
+
+        // ── Transformées matricielles (Bézier & BSpline) ────────────────────
+        // Flèches → Translation ±10 px
+        // R / Maj+R → Rotation ±15°  |  S / Maj+S → Échelle ×1.1/×0.9  |  H / Maj+H → Cisaillement ±0.1
+        if (_mode == AppMode.Bezier || _mode == AppMode.BSpline)
+        {
+            switch (key)
+            {
+                case Key.Right: ApplyTransform(Matrix3x3.Translation( 10,   0)); break;
+                case Key.Left:  ApplyTransform(Matrix3x3.Translation(-10,   0)); break;
+                case Key.Down:  ApplyTransform(Matrix3x3.Translation(  0,  10)); break;
+                case Key.Up:    ApplyTransform(Matrix3x3.Translation(  0, -10)); break;
+                case Key.R:
+                    ApplyTransform(shift ? Matrix3x3.Rotation(-Mathf.Pi/12f) : Matrix3x3.Rotation(Mathf.Pi/12f));
+                    break;
+                case Key.S:
+                    ApplyTransform(shift ? Matrix3x3.Scaling(1f/1.1f,1f/1.1f) : Matrix3x3.Scaling(1.1f,1.1f));
+                    break;
+                case Key.H:
+                    ApplyTransform(shift ? Matrix3x3.Shearing(-0.1f,0f) : Matrix3x3.Shearing(0.1f,0f));
+                    break;
+            }
+        }
     }
 
     private void HandleLeftClick()
