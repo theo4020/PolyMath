@@ -241,11 +241,32 @@ namespace PolyMaths.Managers
         }
 
         // ── Fill ─────────────────────────────────────────────────────────────
-        /// <summary>Toggle scanline fill on the active curve. Stays in sync automatically.</summary>
+        /// <summary>Toggle scanline fill on the active curve.</summary>
         public void FillActiveCurve()
         {
             if (_activeNode == null) return;
             _activeNode.Value.FillEnabled = !_activeNode.Value.FillEnabled;
+        }
+
+        /// <summary>Toggle fill on every marked curve (or active if none marked).</summary>
+        public void FillMarked()
+        {
+            if (_multiSelected.Count == 0) { FillActiveCurve(); return; }
+            // Use the first marked curve's current state to decide direction (toggle all to opposite)
+            bool target = false;
+            foreach (var c in _multiSelected) { target = !c.FillEnabled; break; }
+            foreach (var c in _multiSelected) c.FillEnabled = target;
+        }
+
+        /// <summary>Toggle fill on every curve.</summary>
+        public void FillAll()
+        {
+            // If any curve has fill off, turn all on; otherwise turn all off
+            bool anyOff = false;
+            for (var n = _curves.First; n != null; n = n.Next)
+                if (!n.Value.FillEnabled) { anyOff = true; break; }
+            for (var n = _curves.First; n != null; n = n.Next)
+                n.Value.FillEnabled = anyOff;
         }
 
         // ── Drawing ──────────────────────────────────────────────────────────

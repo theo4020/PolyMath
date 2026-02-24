@@ -52,6 +52,8 @@ public partial class Main : Node2D
     private const int M_BEZ_JOIN_C1      = 27;
     private const int M_BEZ_JOIN_C2      = 28;
     private const int M_BEZ_FILL         = 29;
+    private const int M_BEZ_FILL_MARKED  = 38;
+    private const int M_BEZ_FILL_ALL     = 39;
     private const int M_BEZ_BENCH        = 30;
     private const int M_BEZ_MARK         = 35;
     private const int M_BEZ_DELETE_MARKED= 36;
@@ -267,7 +269,9 @@ public partial class Main : Node2D
         _menu.AddItem("Raccord C1", M_BEZ_JOIN_C1);
         _menu.AddItem("Raccord C2", M_BEZ_JOIN_C2);
         _menu.AddSeparator();
-        _menu.AddItem("Remplir courbe",  M_BEZ_FILL);
+        _menu.AddItem("Remplir active",        M_BEZ_FILL);
+        _menu.AddItem("Remplir marquées",      M_BEZ_FILL_MARKED);
+        _menu.AddItem("Remplir toutes",        M_BEZ_FILL_ALL);
         _menu.AddItem("Benchmark",       M_BEZ_BENCH);
         _menu.AddSeparator();
         _menu.AddItem("Translater (+10,+10)", M_BEZ_TRANSLATE);
@@ -322,6 +326,8 @@ public partial class Main : Node2D
             case M_BEZ_JOIN_C1:       _bezMgr.JoinLastTwo(Continuity.C1); break;
             case M_BEZ_JOIN_C2:       _bezMgr.JoinLastTwo(Continuity.C2); break;
             case M_BEZ_FILL:          _bezMgr.FillActiveCurve(); break;
+            case M_BEZ_FILL_MARKED:   _bezMgr.FillMarked();      break;
+            case M_BEZ_FILL_ALL:      _bezMgr.FillAll();         break;
             case M_BEZ_BENCH:         _bezMgr.RunBenchmark();    break;
             case M_BEZ_TRANSLATE:
                 _bezMgr.ApplyTransform(Matrix3x3.Translation(10, 10)); break;
@@ -407,7 +413,9 @@ public partial class Main : Node2D
         SideBtn(vbox, "Raccord C0",     () => _bezMgr.JoinLastTwo(Continuity.C0));
         SideBtn(vbox, "Raccord C1",     () => _bezMgr.JoinLastTwo(Continuity.C1));
         SideBtn(vbox, "Raccord C2",     () => _bezMgr.JoinLastTwo(Continuity.C2));
-        SideBtn(vbox, "Remplir",        () => _bezMgr.FillActiveCurve());
+        SideBtn(vbox, "Remplir active",  () => _bezMgr.FillActiveCurve());
+        SideBtn(vbox, "Remplir marquées",() => _bezMgr.FillMarked());
+        SideBtn(vbox, "Remplir toutes", () => _bezMgr.FillAll());
         vbox.AddChild(new HSeparator());
 
         // ── BSpline ─────────────────────────────────────────────────────
