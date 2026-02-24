@@ -22,10 +22,15 @@ namespace PolyMaths.Managers
         // ── Fill state ───────────────────────────────────────────────────────
         private List<(Point2D, Point2D)> _fillSegs = new List<(Point2D, Point2D)>();
 
+        // ── Multi-selection ──────────────────────────────────────────────────
+        private HashSet<BezierCurve> _multiSelected = new HashSet<BezierCurve>();
+        public int MultiSelectedCount => _multiSelected.Count;
+
         // ── Colors ───────────────────────────────────────────────────────────
         public Color ControlPolygonColor { get; set; } = new Color(0.5f, 0.5f, 0.5f);
         public Color CurveColor          { get; set; } = new Color(0.2f, 0.6f, 1f);
         public Color ActiveCurveColor    { get; set; } = new Color(1f, 0.3f, 0.3f);
+        public Color MarkedCurveColor    { get; set; } = new Color(1f, 0.7f, 0f);   // orange
         public Color SelectedPointColor  { get; set; } = Colors.Red;
         public Color FillColor           { get; set; } = new Color(1f, 1f, 0f, 0.4f);
         public int   DotRadius           { get; set; } = 5;
@@ -40,10 +45,13 @@ namespace PolyMaths.Managers
                 string mode   = _editMode ? "ÉDITION" : "AJOUT";
                 int step = _activeNode?.Value.Step ?? 0;
                 int curveCount = _curves.Count;
+                string mark = _multiSelected.Count > 0
+                    ? string.Format("  [Marquées:{0}]", _multiSelected.Count) : "";
                 return string.Format(
-                    "BEZIER | Mode:{0} | Méthode:{1} | Pas:{2} | Courbes:{3}\n{4}\n{5}",
-                    mode, method, step, curveCount,
-                    _editMode ? "ClicG=sélect  Glisser=déplacer  Suppr=retirer" : "ClicG=ajouter point  ClicD=menu  [↑↓←→] Translater  [R] Rotation  [S] Échelle  [H] Cisaillement",
+                    "BEZIER | Mode:{0} | Méthode:{1} | Pas:{2} | Courbes:{3}{4}\n{5}\n{6}",
+                    mode, method, step, curveCount, mark,
+                    _editMode ? "ClicG=sélect  Glisser=déplacer  Suppr=retirer  [Espace]=marquer"
+                              : "ClicG=ajouter  ClicD=menu  [↑↓←→] Trans  [R] Rot  [S] Éch  [H] Cis  [Espace]=marquer",
                     _benchText);
             }
         }
@@ -124,9 +132,51 @@ namespace PolyMaths.Managers
         public void DeleteActiveCurve()
         {
             if (_activeNode == null) return;
+            _multiSelected.Remove(_activeNode.Value);
             var next = _activeNode.Next ?? _activeNode.Previous;
             _curves.Remove(_activeNode);
             _activeNode = next;
+            _fillSegs.Clear();
+        }
+
+        /// <summary>Toggle the active curve in/out of the multi-selection set.</summary>
+        public void ToggleActiveInSelection()
+        {
+            if (_activeNode == null) return;
+            var curve = _activeNode.Value;
+            if (!_multiSelected.Add(curve))   // Add() returns false when already present
+                _multiSelected.Remove(curve);
+        }
+
+        /// <summary>Delete all marked curves. Falls back to deleting the active curve if none are marked.</summary>
+        public void DeleteMarked()
+        {
+            if (_multiSelected.Count == 0) { DeleteActiveCurve(); return; }
+
+            // Find a replacement active node that is not in the marked set
+            LinkedListNode<BezierCurve> newActive = null;
+            for (var n = _curves.First; n != null; n = n.Next)
+                if (!_multiSelected.Contains(n.Value)) { newActive = n; break; }
+
+            // Remove all marked nodes
+            var node = _curves.First;
+            while (node != null)
+            {
+                var next = node.Next;
+                if (_multiSelected.Contains(node.Value)) _curves.Remove(node);
+                node = next;
+            }
+            _multiSelected.Clear();
+            _activeNode = newActive;
+            _fillSegs.Clear();
+        }
+
+        /// <summary>Delete every curve.</summary>
+        public void DeleteAll()
+        {
+            _curves.Clear();
+            _activeNode = null;
+            _multiSelected.Clear();
             _fillSegs.Clear();
         }
 
@@ -223,15 +273,15 @@ namespace PolyMaths.Managers
             var node = _curves.First;
             while (node != null)
             {
-                DrawCurve(canvas, node.Value, node == _activeNode);
+                DrawCurve(canvas, node.Value, node == _activeNode, _multiSelected.Contains(node.Value));
                 node = node.Next;
             }
         }
 
-        private void DrawCurve(Node2D canvas, BezierCurve curve, bool isActive)
+        private void DrawCurve(Node2D canvas, BezierCurve curve, bool isActive, bool isMarked)
         {
             var pts = curve.ControlPoints;
-            Color cc = isActive ? ActiveCurveColor : CurveColor;
+            Color cc = isActive ? ActiveCurveColor : (isMarked ? MarkedCurveColor : CurveColor);
 
             // Control polygon (thin gray lines)
             for (int i = 0; i < pts.Count - 1; i++)

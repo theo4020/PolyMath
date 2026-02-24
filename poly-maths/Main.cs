@@ -53,6 +53,9 @@ public partial class Main : Node2D
     private const int M_BEZ_JOIN_C2      = 28;
     private const int M_BEZ_FILL         = 29;
     private const int M_BEZ_BENCH        = 30;
+    private const int M_BEZ_MARK         = 35;
+    private const int M_BEZ_DELETE_MARKED= 36;
+    private const int M_BEZ_DELETE_ALL   = 37;
     private const int M_BEZ_TRANSLATE    = 31;
     private const int M_BEZ_ROTATE       = 32;
     private const int M_BEZ_SCALE        = 33;
@@ -153,6 +156,7 @@ public partial class Main : Node2D
             if (key == Key.Minus || key == Key.KpSubtract) _bezMgr.StepDown();
             if (key == Key.Delete)                         _bezMgr.HandleDelete();
             if (key == Key.Tab)                            _bezMgr.SelectNext();
+            if (key == Key.Space)                          _bezMgr.ToggleActiveInSelection();
         }
 
         // ── BSpline ─────────────────────────────────────────────────────────
@@ -249,6 +253,9 @@ public partial class Main : Node2D
         // Bezier items
         _menu.AddItem("Nouvelle courbe",          M_BEZ_NEW);
         _menu.AddItem("Supprimer courbe active",   M_BEZ_DELETE);
+        _menu.AddItem("Marquer / Démarquer",       M_BEZ_MARK);
+        _menu.AddItem("Supprimer marquées",        M_BEZ_DELETE_MARKED);
+        _menu.AddItem("Supprimer toutes",          M_BEZ_DELETE_ALL);
         _menu.AddSeparator();
         _menu.AddItem("Basculer: Édition / Ajout",    M_BEZ_TOGGLE_MODE);
         _menu.AddItem("Basculer: Direct / Casteljau", M_BEZ_TOGGLE_METHOD);
@@ -303,7 +310,10 @@ public partial class Main : Node2D
             case M_POLY_RESET: _polyMgr.Reset(); break;
             // Bezier
             case M_BEZ_NEW:           _bezMgr.NewCurve();        break;
-            case M_BEZ_DELETE:        _bezMgr.DeleteActiveCurve(); break;
+            case M_BEZ_DELETE:        _bezMgr.DeleteActiveCurve();      break;
+            case M_BEZ_MARK:          _bezMgr.ToggleActiveInSelection(); break;
+            case M_BEZ_DELETE_MARKED: _bezMgr.DeleteMarked();            break;
+            case M_BEZ_DELETE_ALL:    _bezMgr.DeleteAll();               break;
             case M_BEZ_TOGGLE_MODE:   _bezMgr.ToggleEditMode();  break;
             case M_BEZ_TOGGLE_METHOD: _bezMgr.ToggleMethod();    break;
             case M_BEZ_STEP_UP:       _bezMgr.StepUp();          break;
@@ -389,7 +399,10 @@ public partial class Main : Node2D
         SideLabel(vbox, "── BÉZIER ──");
         SideBtn(vbox, "+ Courbe",       () => { _mode = AppMode.Bezier;  _bezMgr.NewCurve(); });
         SideBtn(vbox, "Édition / Ajout",() => _bezMgr.ToggleEditMode());
-        SideBtn(vbox, "Suppr. courbe",  () => _bezMgr.DeleteActiveCurve());
+        SideBtn(vbox, "Marquer [Espace]",      () => _bezMgr.ToggleActiveInSelection());
+        SideBtn(vbox, "Suppr. active",         () => _bezMgr.DeleteActiveCurve());
+        SideBtn(vbox, "Suppr. marquées",       () => _bezMgr.DeleteMarked());
+        SideBtn(vbox, "Suppr. toutes",         () => _bezMgr.DeleteAll());
         SideBtn(vbox, "Méthode",        () => _bezMgr.ToggleMethod());
         SideBtn(vbox, "Raccord C0",     () => _bezMgr.JoinLastTwo(Continuity.C0));
         SideBtn(vbox, "Raccord C1",     () => _bezMgr.JoinLastTwo(Continuity.C1));
