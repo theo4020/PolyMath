@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://bth7fvv4at8x0"]
+[gd_scene load_steps=3 format=3 uid="uid://bth7fvv4at8x0"]
 
 [ext_resource type="Script" uid="uid://dekphcusf1t7c" path="res://Main.cs" id="1_apscn"]
+[ext_resource type="Script" uid="uid://by8qm5bbttlwf" path="res://ControlScript.cs" id="2_ctr22"]
 
 [node name="Node2D" type="Node2D"]
 
@@ -16,3 +17,81 @@ BsControlColor = Color(0.5, 0.5, 0.5, 1)
 BsCurveColor = Color(0.2, 0.9, 0.5, 1)
 BsActiveColor = Color(1, 0.5, 0, 1)
 DotRadius = 5
+_polygonColor = Color(0.09346505, 0.2125682, 0.58715767, 1)
+_windowColor = Color(0.60400987, 0.47064304, 0, 1)
+_resultColor = Color(0.19584897, 0.48728192, 0.13972038, 1)
+_pointRadius = 10.0
+Nbpas = 9
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = 1820.0
+offset_right = 1920.0
+offset_bottom = 100.0
+grow_horizontal = 0
+script = ExtResource("2_ctr22")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control"]
+layout_mode = 0
+offset_left = -100.0
+offset_right = 100.0
+offset_bottom = 401.0
+
+[node name="BtnDrawPolygon" type="Button" parent="Control/VBoxContainer"]
+layout_mode = 2
+text = "
+Draw Polygon
+
+"
+
+[node name="BtnDrawBezier" type="Button" parent="Control/VBoxContainer"]
+layout_mode = 2
+text = "
+Draw Bezier
+
+"
+
+[node name="BtnShowPascal" type="Button" parent="Control/VBoxContainer"]
+layout_mode = 2
+text = "
+Show Pascal
+
+"
+
+[node name="BtnShowCasteljau" type="Button" parent="Control/VBoxContainer"]
+layout_mode = 2
+text = "
+Show Casteljau
+
+"
+
+[node name="BtnEraser" type="Button" parent="Control/VBoxContainer"]
+layout_mode = 2
+text = "
+Erase
+
+"
+
+[node name="BtnMovePoint" type="Button" parent="Control/VBoxContainer"]
+layout_mode = 2
+text = "
+Move Point
+
+"
+
+[node name="BtnMovePolygon" type="Button" parent="Control/VBoxContainer"]
+layout_mode = 2
+text = "
+Move Poly
+
+"
+
+[node name="BtnReset" type="Button" parent="Control/VBoxContainer"]
+layout_mode = 2
+text = "
+Reset
+
+"
