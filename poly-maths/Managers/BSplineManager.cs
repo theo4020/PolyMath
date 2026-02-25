@@ -15,7 +15,10 @@ namespace PolyMaths.Managers
         private bool _editMode  = false;
         private int  _dragIndex = -1;
         private bool _dragging  = false;
+        private bool _dragShape = false;             // glisser toute la courbe active
+        private Vector2 _dragShapeOrigin = Vector2.Zero;
         private float _weightEdit = 1f;
+        private bool _showCurvePoints = false;  // T1
 
         private const float SELECT_THRESHOLD = 12f;
         public Color ControlColor { get; set; } = new Color(0.5f, 0.5f, 0.5f);
@@ -63,6 +66,7 @@ namespace PolyMaths.Managers
 
             _dragIndex = -1;
             _dragging  = false;
+            _dragShape = false;
             var curve = ActiveCurve;
             if (curve == null) return;
             for (int i = 0; i < curve.ControlPoints.Count; i++)
@@ -74,14 +78,30 @@ namespace PolyMaths.Managers
                     return;
                 }
             }
+            // Clic dans espace vide → glisser toute la courbe
+            _dragShape       = true;
+            _dragShapeOrigin = mouse;
         }
 
-        public void HandleLeftRelease() { _dragging = false; }
+        public void HandleLeftRelease() { _dragging = false; _dragShape = false; }
 
         public void HandleMouseMove(Vector2 mouse)
         {
             if (_dragging && _dragIndex >= 0)
+            {
                 ActiveCurve?.MovePoint(_dragIndex, V(mouse));
+                return;
+            }
+            if (_dragShape)
+            {
+                var curve = ActiveCurve;
+                if (curve == null) return;
+                var delta = mouse - _dragShapeOrigin;
+                for (int i = 0; i < curve.ControlPoints.Count; i++)
+                    curve.MovePoint(i, new Point2D(curve.ControlPoints[i].x + delta.X,
+                                                   curve.ControlPoints[i].y + delta.Y));
+                _dragShapeOrigin = mouse;
+            }
         }
 
         public void HandleDelete()
@@ -153,6 +173,7 @@ namespace PolyMaths.Managers
 
         public void ToggleEditMode() { _editMode = !_editMode; _dragIndex = -1; _dragging = false; }
         public void ToggleNurbsMode() { _nurbsMode = !_nurbsMode; }
+        public void ToggleShowCurvePoints() { _showCurvePoints = !_showCurvePoints; }  // T1
 
         public void ApplyTransform(Matrix3x3 m) { ActiveCurve?.ApplyTransform(m); }
 
@@ -277,6 +298,14 @@ namespace PolyMaths.Managers
                 var cPts = curve.GetPoints();
                 for (int i = 0; i < cPts.Count - 1; i++)
                     canvas.DrawLine(P(cPts[i]), P(cPts[i + 1]), cc, 2);
+
+                // T1 – Points sur la courbe
+                if (_showCurvePoints)
+                {
+                    float r = DotRadius * 0.5f;
+                    foreach (var p in cPts)
+                        canvas.DrawCircle(P(p), r, Colors.White);
+                }
             }
         }
 

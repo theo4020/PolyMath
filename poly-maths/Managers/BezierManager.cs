@@ -17,8 +17,11 @@ namespace PolyMaths.Managers
         private bool   _editMode     = false;   // false = append, true = drag
         private int    _dragIndex    = -1;
         private bool   _dragging     = false;
+        private bool   _dragShape    = false;    // glisser toute la courbe active
+        private Vector2 _dragShapeOrigin = Vector2.Zero;
         private bool _showPascal    = true;
         private bool _showCasteljau = false;
+        private bool _showCurvePoints = false;  // T1 – afficher les points échantillonnés
         public Color PascalColor     { get; set; } = new Color(0.2f, 0.6f, 1f);    // blue
         public Color CasteljauColor  { get; set; } = new Color(1f, 0.35f, 0.1f);   // orange-red
         private string _benchText    = "";
@@ -72,6 +75,7 @@ namespace PolyMaths.Managers
             // Edit mode — priority 1: select nearest existing control point
             _dragIndex = -1;
             _dragging  = false;
+            _dragShape = false;
             var node = _curves.First;
             while (node != null)
             {
@@ -106,7 +110,38 @@ namespace PolyMaths.Managers
                 }
                 node = node.Next;
             }
-        }
+
+            // Edit mode — priority 3a: click near any control point of ANOTHER curve → switch active
+            var switchNode = _curves.First;
+            LinkedListNode<BezierCurve> bestNode = null;
+            int bestIdx = -1;
+            float bestDist = SELECT_THRESHOLD * 2f;
+            while (switchNode != null)
+            {
+                if (switchNode == _activeNode) { switchNode = switchNode.Next; continue; }
+                for (int i = 0; i < switchNode.Value.ControlPoints.Count; i++)
+                {
+                    float d = P(switchNode.Value.ControlPoints[i]).DistanceTo(mouse);
+                    if (d < bestDist) { bestDist = d; bestNode = switchNode; bestIdx = i; }
+                }
+                switchNode = switchNode.Next;
+            }
+            if (bestNode != null)
+            {
+                _activeNode  = bestNode;
+                _dragIndex   = bestIdx;
+                _dragging    = true;
+                _dragShape   = false;
+                return;
+            }
+
+            // Edit mode — priority 3b: click in empty space → drag whole active curve
+            if (_activeNode != null)
+            {
+                _dragShape       = true;
+                _dragShapeOrigin = mouse;
+            }
+        }  // end HandleLeftClick
 
         /// <summary>Double-click in edit mode: delete the point under the cursor.</summary>
         public void HandleDoubleClick(Vector2 mouse)
@@ -130,12 +165,26 @@ namespace PolyMaths.Managers
             }
         }
 
-        public void HandleLeftRelease() { _dragging = false; }
+        public void HandleLeftRelease() { _dragging = false; _dragShape = false; }
 
         public void HandleMouseMove(Vector2 mouse)
         {
+            // Glisser un point de contrôle individuel
             if (_dragging && _dragIndex >= 0 && _activeNode != null)
+            {
                 _activeNode.Value.MovePoint(_dragIndex, V(mouse));
+                return;
+            }
+            // Glisser toute la forme active
+            if (_dragShape && _activeNode != null)
+            {
+                var delta = mouse - _dragShapeOrigin;
+                var curve = _activeNode.Value;
+                for (int i = 0; i < curve.ControlPoints.Count; i++)
+                    curve.MovePoint(i, new Point2D(curve.ControlPoints[i].x + delta.X,
+                                                   curve.ControlPoints[i].y + delta.Y));
+                _dragShapeOrigin = mouse;
+            }
         }
 
         public void HandleDelete()
@@ -250,6 +299,7 @@ namespace PolyMaths.Managers
 
         public void ToggleShowPascal()    { _showPascal    = !_showPascal;    _benchText = ""; }
         public void ToggleShowCasteljau() { _showCasteljau = !_showCasteljau; _benchText = ""; }
+        public void ToggleShowCurvePoints() { _showCurvePoints = !_showCurvePoints; }
         public void ToggleEditMode() { _editMode = !_editMode; _dragIndex = -1; _dragging = false; }
 
         // ── Transforms ───────────────────────────────────────────────────────
@@ -328,8 +378,15 @@ namespace PolyMaths.Managers
         public void RunBenchmark()
         {
             if (_activeNode == null) return;
-            var (d, k) = _activeNode.Value.BenchmarkBoth(10000);
-            _benchText = string.Format("Benchmark: Direct={0}ms  Casteljau={1}ms", d, k);
+            var (p, k) = _activeNode.Value.BenchmarkBoth();
+            _benchText = $"[Bench P+C]\n  Pascal    : {p}\n  Casteljau : {k}";
+        }
+
+        public void RunBenchmarkPascal()
+        {
+            if (_activeNode == null) return;
+            var stats = _activeNode.Value.BenchmarkPascal();
+            _benchText = $"[Bench Pascal]\n  {stats}";
         }
 
         // ── Fill ─────────────────────────────────────────────────────────────
@@ -418,6 +475,14 @@ namespace PolyMaths.Managers
             if (casteljauPts != null)
                 for (int i = 0; i < casteljauPts.Count - 1; i++)
                     canvas.DrawLine(P(casteljauPts[i]), P(casteljauPts[i + 1]), CasteljauColor, 2);
+
+            // T1 – Points sur la courbe (petits cercles)
+            if (_showCurvePoints && curvePts != null)
+            {
+                float r = DotRadius * 0.5f;
+                foreach (var p in curvePts)
+                    canvas.DrawCircle(P(p), r, Colors.White);
+            }
         }
 
         // ── Helpers ──────────────────────────────────────────────────────────

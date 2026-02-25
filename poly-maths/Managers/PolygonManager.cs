@@ -16,6 +16,12 @@ namespace PolyMaths.Managers
 
         private bool _subjectClosed, _windowClosed, _resultReady;
 
+        // T2 – Edit mode (drag polygon vertices)
+        private bool _editMode  = false;
+        private int  _dragIndex = -1;       // index in _subject.Vertices being dragged
+        private bool _dragging  = false;
+        private const float EDIT_THRESHOLD = 12f;
+
         // Pre-computed LCA fill segments for each polygon
         private List<(Point2D, Point2D)> _subjectFill = new List<(Point2D, Point2D)>();
         private List<(Point2D, Point2D)> _windowFill  = new List<(Point2D, Point2D)>();
@@ -27,13 +33,31 @@ namespace PolyMaths.Managers
         public int   DotRadius    { get; set; } = 5;
 
         public string StatusText =>
-            !_subjectClosed ? "Click: add polygon vertex | RightClick: close polygon" :
-            !_windowClosed  ? "Click: add clip window vertex (convex only) | RightClick: close window" :
-                              "Clipping done. Right-click menu → Reset to restart.";
+            _editMode   ? "POLYGONE ÉDITION – Glisser=déplacer sommet | RightClick=menu" :
+            !_subjectClosed ? "Click: ajouter sommet polygone | RightClick: fermer" :
+            !_windowClosed  ? "Click: ajouter sommet fenêtre (convexe) | RightClick: fermer" :
+                              "Clipping terminé. Menu→Reset pour recommencer.";
 
         // ── Input ────────────────────────────────────────────────────────────
         public bool HandleLeftClick(Vector2 mouse)
         {
+            // In edit mode, start drag if near a subject vertex
+            if (_editMode)
+            {
+                _dragIndex = -1;
+                _dragging  = false;
+                for (int i = 0; i < _subject.Vertices.Count; i++)
+                {
+                    if (new Vector2(_subject.Vertices[i].x, _subject.Vertices[i].y).DistanceTo(mouse) <= EDIT_THRESHOLD)
+                    {
+                        _dragIndex = i;
+                        _dragging  = true;
+                        return true;
+                    }
+                }
+                return false;
+            }
+
             if (!_subjectClosed)
             {
                 _subject.Vertices.Add(V(mouse));
@@ -50,6 +74,21 @@ namespace PolyMaths.Managers
             }
             return false;
         }
+
+        // T2 – drag support
+        public void HandleMouseMove(Vector2 mouse)
+        {
+            if (_editMode && _dragging && _dragIndex >= 0 && _dragIndex < _subject.Vertices.Count)
+            {
+                _subject.Vertices[_dragIndex] = V(mouse);
+                // Recompute fill if subject is already closed
+                if (_subjectClosed) ComputeFill(_subject, _subjectFill);
+                // Rerun clipping if result was ready
+                if (_resultReady) RunClipping();
+            }
+        }
+
+        public void HandleLeftRelease() { _dragging = false; }
 
         public bool HandleRightClick()
         {
@@ -78,7 +117,10 @@ namespace PolyMaths.Managers
             _subjectFill.Clear();
             _windowFill.Clear();
             _resultFill.Clear();
+            _dragging = false; _dragIndex = -1;
         }
+
+        public void ToggleEditMode() { _editMode = !_editMode; _dragging = false; _dragIndex = -1; }  // T2
 
         // ── Drawing ──────────────────────────────────────────────────────────
         public void Draw(Node2D canvas)
@@ -145,7 +187,12 @@ namespace PolyMaths.Managers
 
         private void DrawDots(Node2D c, Polygon p)
         {
-            foreach (var pt in p.Vertices) c.DrawCircle(P(pt), DotRadius, Colors.Black);
+            var verts = p.Vertices;
+            for (int i = 0; i < verts.Count; i++)
+            {
+                bool sel = _editMode && p == _subject && i == _dragIndex;
+                c.DrawCircle(P(verts[i]), DotRadius, sel ? Colors.Red : Colors.Black);
+            }
         }
 
         private static Point2D V(Vector2 v) => new Point2D(v.X, v.Y);

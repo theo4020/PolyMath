@@ -108,18 +108,66 @@ namespace PolyMaths.Algorithms
             return pts;
         }
 
-        /// <summary>Benchmark both methods over many samples. Returns (directMs, casteljauMs).</summary>
-        public (long directMs, long casteljauMs) BenchmarkBoth(int samples = 10000)
+        /// <summary>Stats from a benchmark run (min/max/avg over several reps).</summary>
+        public readonly struct BenchStats
         {
-            if (_controlPoints.Count < 2) return (0, 0);
-            var sw = Stopwatch.StartNew();
-            for (int i = 0; i <= samples; i++) EvaluateDirect((float)i / samples);
-            sw.Stop(); long dMs = sw.ElapsedMilliseconds;
+            public readonly double Min, Max, Avg;
+            public readonly int Samples, Reps;
+            public BenchStats(double[] times, int samples, int reps)
+            {
+                Samples = samples; Reps = reps;
+                Min = double.MaxValue; Max = double.MinValue; double sum = 0;
+                foreach (var t in times) { if (t < Min) Min = t; if (t > Max) Max = t; sum += t; }
+                Avg = sum / times.Length;
+            }
+            public override string ToString() =>
+                $"moy={Avg:F2}ms  min={Min:F2}ms  max={Max:F2}ms  ({Samples:N0}pts × {Reps} runs)";
+        }
 
-            sw.Restart();
-            for (int i = 0; i <= samples; i++) EvaluateCasteljau((float)i / samples);
-            sw.Stop();
-            return (dMs, sw.ElapsedMilliseconds);
+        /// <summary>Benchmark both Pascal and Casteljau with multiple reps for reliable stats.</summary>
+        public (BenchStats pascal, BenchStats casteljau) BenchmarkBoth(int samples = 200_000, int reps = 5)
+        {
+            if (_controlPoints.Count < 2)
+                return (new BenchStats(new double[]{0}, samples, reps),
+                        new BenchStats(new double[]{0}, samples, reps));
+
+            var dTimes = new double[reps];
+            var kTimes = new double[reps];
+            for (int r = 0; r < reps; r++)
+            {
+                double sink = 0;
+                var sw = Stopwatch.StartNew();
+                for (int i = 0; i <= samples; i++) { var p = EvaluateDirect((float)i / samples); sink += p.x; }
+                sw.Stop();
+                dTimes[r] = sw.Elapsed.TotalMilliseconds;
+                System.Runtime.CompilerServices.RuntimeHelpers.EnsureSufficientExecutionStack();
+                _ = sink; // prevent elimination
+
+                sink = 0;
+                sw.Restart();
+                for (int i = 0; i <= samples; i++) { var p = EvaluateCasteljau((float)i / samples); sink += p.x; }
+                sw.Stop();
+                kTimes[r] = sw.Elapsed.TotalMilliseconds;
+                _ = sink;
+            }
+            return (new BenchStats(dTimes, samples, reps), new BenchStats(kTimes, samples, reps));
+        }
+
+        /// <summary>Benchmark Pascal/Bernstein alone with multiple reps.</summary>
+        public BenchStats BenchmarkPascal(int samples = 200_000, int reps = 5)
+        {
+            if (_controlPoints.Count < 2) return new BenchStats(new double[]{0}, samples, reps);
+            var times = new double[reps];
+            for (int r = 0; r < reps; r++)
+            {
+                double sink = 0;
+                var sw = Stopwatch.StartNew();
+                for (int i = 0; i <= samples; i++) { var p = EvaluateDirect((float)i / samples); sink += p.x; }
+                sw.Stop();
+                times[r] = sw.Elapsed.TotalMilliseconds;
+                _ = sink;
+            }
+            return new BenchStats(times, samples, reps);
         }
     }
 }
