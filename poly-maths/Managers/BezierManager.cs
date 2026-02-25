@@ -27,8 +27,9 @@ namespace PolyMaths.Managers
         private string _benchText    = "";
 
         // ── Multi-selection ──────────────────────────────────────────────────
-        private List<BezierCurve> _multiSelected = new List<BezierCurve>();
+        private HashSet<BezierCurve> _multiSelected = new HashSet<BezierCurve>();
         public int MultiSelectedCount => _multiSelected.Count;
+        private readonly List<BezierCurve> _markedOrder = new();
 
         // ── Colors ───────────────────────────────────────────────────────────
         public Color ControlPolygonColor { get; set; } = new Color(0.5f, 0.5f, 0.5f);
@@ -235,10 +236,14 @@ namespace PolyMaths.Managers
         {
             if (_activeNode == null) return;
             var curve = _activeNode.Value;
-            if (!_multiSelected.Contains(curve))
-                _multiSelected.Add(curve);
+
+            if (_multiSelected.Add(curve))
+                _markedOrder.Add(curve);      // newly marked
             else
+            {
                 _multiSelected.Remove(curve);
+                _markedOrder.Remove(curve);   // must remove here too
+            }
         }
 
         /// <summary>Delete all marked curves. Falls back to deleting the active curve if none are marked.</summary>
@@ -343,10 +348,12 @@ namespace PolyMaths.Managers
         /// </summary>
         public void JoinLastTwo(Continuity cont)
         {
-            if (_curves.Count < 2) return;
-            var nodeB = _curves.Last;
-            var nodeA = nodeB.Previous;
-            Join(nodeA.Value, nodeB.Value, cont);
+            var (last, previous) = LastTwoMarkedOrNull();
+
+            if (last != null && previous != null)
+            {
+                Join(previous, last, cont);
+            }
         }
 
         public static void Join(BezierCurve a, BezierCurve b, Continuity cont)
@@ -368,7 +375,6 @@ namespace PolyMaths.Managers
             b.MovePoint(1, c1P1);
             if (cont == Continuity.C1) return;
 
-            // C2: B.P2 based on second derivative continuity
             if (b.ControlPoints.Count < 3 || n < 2) return;
             var Pn_2 = a.ControlPoints[n - 2];
             var c2P2 = Pn_2 + 2 * (c1P1 - Pn_1);
@@ -516,6 +522,18 @@ namespace PolyMaths.Managers
             float cx = 0, cy = 0;
             foreach (var p in pts) { cx += p.x; cy += p.y; }
             return new Point2D(cx / pts.Count, cy / pts.Count);
+        }
+        private (BezierCurve last, BezierCurve previous) LastTwoMarkedOrNull()
+        {
+            if (_markedOrder.Count < 1)
+                return (null, null);
+
+            BezierCurve last = _markedOrder[^1];
+            BezierCurve previous = _markedOrder.Count > 1
+                ? _markedOrder[^2]
+                : null;
+
+            return (last, previous);
         }
     }
 }
