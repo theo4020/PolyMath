@@ -223,10 +223,13 @@ public partial class Main : Node2D
     {
         if (_mode == AppMode.Polygon)
         {
-            _polyMgr.HandleRightClick();
+            if (!_polyMgr.HandleRightClick())
+            {
+                _menu.Position = (Vector2I)GetViewport().GetMousePosition();
+                _menu.Popup();
+            }
             return;
         }
-        // Bezier / BSpline: show popup menu
         _menu.Position = (Vector2I)GetViewport().GetMousePosition();
         _menu.Popup();
     }
