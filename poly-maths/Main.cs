@@ -14,6 +14,15 @@ public partial class Main : Node2D
     private BezierManager   _bezMgr  = new BezierManager();
     private BSplineManager  _bspMgr  = new BSplineManager();
 
+    // ── Transform steps (shared by Bezier + BSpline) ──────────────────────
+    private float _transStep  = 30f;
+    private float _rotStep    = Mathf.Pi / 12f;   // 15°
+    private float _scaleStep  = 1.10f;
+    private float _shearStep  = 0.10f;
+
+    // Step display labels — assigned in BuildSidebar(), updated by step-adjust methods
+    private Label _transStepLbl, _rotStepLbl, _scaleStepLbl, _shearStepLbl;
+
     // ── Inspector exports (visibles dans l'éditeur Godot) ────────────────
     // Couleurs – Polygone
     [Export] public Color PolySubjectColor { get; set; } = new Color(0.2f, 0.6f, 1f);
@@ -79,6 +88,10 @@ public partial class Main : Node2D
     private const int M_BS_DEMO_ELLIPSE   = 53;
     private const int M_BS_DEMO_PARABOLA  = 54;
     private const int M_BS_DEMO_HYPERBOLA = 55;
+    // New Bezier constants (Task 8a)
+    private const int M_BEZ_PASCAL     = 56;
+    private const int M_BEZ_CASTELJAU  = 57;
+    private const int M_BEZ_DEMO_SINE  = 58;
 
     // ── Lifecycle ────────────────────────────────────────────────────────
     public override void _Ready()
@@ -167,6 +180,8 @@ public partial class Main : Node2D
             if (key == Key.Delete)                         _bezMgr.HandleDelete();
             if (key == Key.Tab)                            _bezMgr.SelectNext();
             if (key == Key.Space)                          _bezMgr.ToggleActiveInSelection();
+            if (key == Key.P) _bezMgr.ToggleShowPascal();
+            if (key == Key.C) _bezMgr.ToggleShowCasteljau();
         }
 
         // ── BSpline ─────────────────────────────────────────────────────────
@@ -178,25 +193,20 @@ public partial class Main : Node2D
         }
 
         // ── Transformées matricielles (Bézier & BSpline) ────────────────────
-        // Flèches → Translation ±10 px
-        // R / Maj+R → Rotation ±15°  |  S / Maj+S → Échelle ×1.1/×0.9  |  H / Maj+H → Cisaillement ±0.1
         if (_mode == AppMode.Bezier || _mode == AppMode.BSpline)
         {
+            float tStep = shift ? _transStep / 6f : _transStep;
+
             switch (key)
             {
-                case Key.Right: ApplyTransform(Matrix3x3.Translation( 10,   0)); break;
-                case Key.Left:  ApplyTransform(Matrix3x3.Translation(-10,   0)); break;
-                case Key.Down:  ApplyTransform(Matrix3x3.Translation(  0,  10)); break;
-                case Key.Up:    ApplyTransform(Matrix3x3.Translation(  0, -10)); break;
-                case Key.R:
-                    ApplyTransform(shift ? Matrix3x3.Rotation(-Mathf.Pi/12f) : Matrix3x3.Rotation(Mathf.Pi/12f));
-                    break;
-                case Key.S:
-                    ApplyTransform(shift ? Matrix3x3.Scaling(1f/1.1f,1f/1.1f) : Matrix3x3.Scaling(1.1f,1.1f));
-                    break;
-                case Key.H:
-                    ApplyTransform(shift ? Matrix3x3.Shearing(-0.1f,0f) : Matrix3x3.Shearing(0.1f,0f));
-                    break;
+                case Key.Right: DoTranslate( tStep,     0); break;
+                case Key.Left:  DoTranslate(-tStep,     0); break;
+                case Key.Down:  DoTranslate(    0,  tStep); break;
+                case Key.Up:    DoTranslate(    0, -tStep); break;
+                case Key.R:     DoRotate(shift ? -1f : +1f); break;
+                case Key.S:     DoScale(shift ? 1f / _scaleStep : _scaleStep); break;
+                case Key.H:     DoShearH(shift ? -1f : +1f); break;
+                case Key.V:     DoShearV(shift ? -1f : +1f); break;
             }
         }
     }
@@ -218,6 +228,58 @@ public partial class Main : Node2D
         if (_mode == AppMode.Bezier)  _bezMgr.ApplyTransform(m);
         if (_mode == AppMode.BSpline) _bspMgr.ApplyTransform(m);
     }
+
+    // ── Do* dispatch helpers ─────────────────────────────────────────────
+    private void DoTranslate(float dx, float dy)
+    {
+        if (_mode == AppMode.Bezier)  _bezMgr.Translate(dx, dy);
+        if (_mode == AppMode.BSpline) _bspMgr.Translate(dx, dy);
+    }
+
+    private void DoRotate(float sign)
+    {
+        float angle = sign * _rotStep;
+        if (_mode == AppMode.Bezier)  _bezMgr.Rotate(angle);
+        if (_mode == AppMode.BSpline) _bspMgr.Rotate(angle);
+    }
+
+    private void DoScale(float factor)
+    {
+        if (_mode == AppMode.Bezier)  _bezMgr.Scale(factor);
+        if (_mode == AppMode.BSpline) _bspMgr.Scale(factor);
+    }
+
+    private void DoShearH(float sign)
+    {
+        float d = sign * _shearStep;
+        if (_mode == AppMode.Bezier)  _bezMgr.ShearH(d);
+        if (_mode == AppMode.BSpline) _bspMgr.ShearH(d);
+    }
+
+    private void DoShearV(float sign)
+    {
+        float d = sign * _shearStep;
+        if (_mode == AppMode.Bezier)  _bezMgr.ShearV(d);
+        if (_mode == AppMode.BSpline) _bspMgr.ShearV(d);
+    }
+
+    // ── Step-adjust helpers ──────────────────────────────────────────────
+    private void RefreshStepLabels()
+    {
+        if (_transStepLbl  != null) _transStepLbl.Text  = $"T:{(int)_transStep}px";
+        if (_rotStepLbl    != null) _rotStepLbl.Text    = $"R:{_rotStep * 180f / Mathf.Pi:F0}°";
+        if (_scaleStepLbl  != null) _scaleStepLbl.Text  = $"S:{(_scaleStep - 1f) * 100f:F0}%";
+        if (_shearStepLbl  != null) _shearStepLbl.Text  = $"H:{_shearStep:F2}";
+    }
+
+    private void TransStepUp()   { _transStep  = Math.Min(_transStep  + 5f,    100f); RefreshStepLabels(); }
+    private void TransStepDown() { _transStep  = Math.Max(_transStep  - 5f,      5f); RefreshStepLabels(); }
+    private void RotStepUp()     { _rotStep    = Math.Min(_rotStep    + Mathf.Pi / 36f, Mathf.Pi / 2f);  RefreshStepLabels(); }
+    private void RotStepDown()   { _rotStep    = Math.Max(_rotStep    - Mathf.Pi / 36f, Mathf.Pi / 36f); RefreshStepLabels(); }
+    private void ScaleStepUp()   { _scaleStep  = Math.Min(_scaleStep  + 0.05f,  2.0f); RefreshStepLabels(); }
+    private void ScaleStepDown() { _scaleStep  = Math.Max(_scaleStep  - 0.05f,  1.05f); RefreshStepLabels(); }
+    private void ShearStepUp()   { _shearStep  = Math.Min(_shearStep  + 0.05f,  0.5f); RefreshStepLabels(); }
+    private void ShearStepDown() { _shearStep  = Math.Max(_shearStep  - 0.05f,  0.05f); RefreshStepLabels(); }
 
     private void HandleRightClick()
     {
@@ -271,7 +333,6 @@ public partial class Main : Node2D
         _menu.AddItem("Supprimer toutes",          M_BEZ_DELETE_ALL);
         _menu.AddSeparator();
         _menu.AddItem("Basculer: Édition / Ajout",    M_BEZ_TOGGLE_MODE);
-        _menu.AddItem("Basculer: Direct / Casteljau", M_BEZ_TOGGLE_METHOD);
         _menu.AddSeparator();
         _menu.AddItem("Pas +",  M_BEZ_STEP_UP);
         _menu.AddItem("Pas -",  M_BEZ_STEP_DOWN);
@@ -283,6 +344,10 @@ public partial class Main : Node2D
         _menu.AddItem("Remplir active",        M_BEZ_FILL);
         _menu.AddItem("Remplir marquées",      M_BEZ_FILL_MARKED);
         _menu.AddItem("Remplir toutes",        M_BEZ_FILL_ALL);
+        _menu.AddSeparator();
+        _menu.AddItem("Afficher Pascal",    M_BEZ_PASCAL);
+        _menu.AddItem("Afficher Casteljau", M_BEZ_CASTELJAU);
+        _menu.AddItem("Demo sinus 50 pts",  M_BEZ_DEMO_SINE);
         _menu.AddItem("Benchmark",       M_BEZ_BENCH);
         _menu.AddSeparator();
         _menu.AddItem("Translater (+10,+10)", M_BEZ_TRANSLATE);
@@ -330,7 +395,6 @@ public partial class Main : Node2D
             case M_BEZ_DELETE_MARKED: _bezMgr.DeleteMarked();            break;
             case M_BEZ_DELETE_ALL:    _bezMgr.DeleteAll();               break;
             case M_BEZ_TOGGLE_MODE:   _bezMgr.ToggleEditMode();  break;
-            case M_BEZ_TOGGLE_METHOD: _bezMgr.ToggleShowPascal(); break;
             case M_BEZ_STEP_UP:       _bezMgr.StepUp();          break;
             case M_BEZ_STEP_DOWN:     _bezMgr.StepDown();        break;
             case M_BEZ_JOIN_C0:       _bezMgr.JoinLastTwo(Continuity.C0); break;
@@ -340,6 +404,9 @@ public partial class Main : Node2D
             case M_BEZ_FILL_MARKED:   _bezMgr.FillMarked();      break;
             case M_BEZ_FILL_ALL:      _bezMgr.FillAll();         break;
             case M_BEZ_BENCH:         _bezMgr.RunBenchmark();    break;
+            case M_BEZ_PASCAL:        _bezMgr.ToggleShowPascal();    break;
+            case M_BEZ_CASTELJAU:     _bezMgr.ToggleShowCasteljau(); break;
+            case M_BEZ_DEMO_SINE:     _bezMgr.LoadDemoSine50();      break;
             case M_BEZ_TRANSLATE:
                 _bezMgr.ApplyTransform(Matrix3x3.Translation(10, 10)); break;
             case M_BEZ_ROTATE:
@@ -414,34 +481,55 @@ public partial class Main : Node2D
 
         // ── Bézier ──────────────────────────────────────────────────────
         SideLabel(vbox, "── BÉZIER ──");
-        SideBtn(vbox, "+ Courbe",       () => { _mode = AppMode.Bezier;  _bezMgr.NewCurve(); });
-        SideBtn(vbox, "Édition / Ajout",() => _bezMgr.ToggleEditMode());
-        SideBtn(vbox, "Marquer [Espace]",      () => _bezMgr.ToggleActiveInSelection());
-        SideBtn(vbox, "Suppr. active",         () => _bezMgr.DeleteActiveCurve());
-        SideBtn(vbox, "Suppr. marquées",       () => _bezMgr.DeleteMarked());
-        SideBtn(vbox, "Suppr. toutes",         () => _bezMgr.DeleteAll());
-        SideBtn(vbox, "Pascal on/off",     () => _bezMgr.ToggleShowPascal());
-        SideBtn(vbox, "Casteljau on/off",  () => _bezMgr.ToggleShowCasteljau());
-        SideBtn(vbox, "Raccord C0",     () => _bezMgr.JoinLastTwo(Continuity.C0));
-        SideBtn(vbox, "Raccord C1",     () => _bezMgr.JoinLastTwo(Continuity.C1));
-        SideBtn(vbox, "Raccord C2",     () => _bezMgr.JoinLastTwo(Continuity.C2));
-        SideBtn(vbox, "Remplir active",  () => _bezMgr.FillActiveCurve());
-        SideBtn(vbox, "Remplir marquées",() => _bezMgr.FillMarked());
-        SideBtn(vbox, "Remplir toutes", () => _bezMgr.FillAll());
+        SideBtn(vbox, "+ Courbe",        () => { _mode = AppMode.Bezier; _bezMgr.NewCurve(); });
+        SideHBox(vbox, "Édition/Ajout",  () => _bezMgr.ToggleEditMode(),
+                       "Marquer [Sp]",   () => _bezMgr.ToggleActiveInSelection());
+        SideHBox(vbox, "Suppr. active",  () => _bezMgr.DeleteActiveCurve(),
+                       "Suppr. toutes",  () => _bezMgr.DeleteAll());
+        SideHBox(vbox, "Remplir active", () => _bezMgr.FillActiveCurve(),
+                       "Remplir toutes", () => _bezMgr.FillAll());
+        SideHBox(vbox, "Raccord C0",     () => _bezMgr.JoinLastTwo(Continuity.C0),
+                       "C1",             () => _bezMgr.JoinLastTwo(Continuity.C1));
+        SideBtn(vbox,  "Raccord C2",     () => _bezMgr.JoinLastTwo(Continuity.C2));
+        SideLabel(vbox, "Algo :");
+        SideHBox(vbox, "Pascal [P]",     () => _bezMgr.ToggleShowPascal(),
+                       "Casteljau [C]",  () => _bezMgr.ToggleShowCasteljau());
+        SideBtn(vbox, "Demo sinus 50",   () => { _mode = AppMode.Bezier; _bezMgr.LoadDemoSine50(); });
         vbox.AddChild(new HSeparator());
 
         // ── BSpline ─────────────────────────────────────────────────────
         SideLabel(vbox, "── BSPLINE ──");
-        SideBtn(vbox, "+ BSpline",      () => { _mode = AppMode.BSpline; _bspMgr.NewBSpline(); });
-        SideBtn(vbox, "+ NURBS",        () => { _mode = AppMode.BSpline; _bspMgr.NewNurbs(); });
-        SideBtn(vbox, "Édition / Ajout",() => _bspMgr.ToggleEditMode());
-        SideBtn(vbox, "Degré +",        () => _bspMgr.DegreeUp());
-        SideBtn(vbox, "Degré -",        () => _bspMgr.DegreeDown());
-        SideBtn(vbox, "Nœuds",          () => _bspMgr.ToggleKnots());
-        SideBtn(vbox, "Cercle",         () => { _mode = AppMode.BSpline; _bspMgr.LoadDemoCircle(); });
-        SideBtn(vbox, "Ellipse",        () => { _mode = AppMode.BSpline; _bspMgr.LoadDemoEllipse(); });
-        SideBtn(vbox, "Parabole",       () => { _mode = AppMode.BSpline; _bspMgr.LoadDemoParabola(); });
-        SideBtn(vbox, "Hyperbole",      () => { _mode = AppMode.BSpline; _bspMgr.LoadDemoHyperbola(); });
+        SideHBox(vbox, "+ BSpline", () => { _mode = AppMode.BSpline; _bspMgr.NewBSpline(); },
+                       "+ NURBS",   () => { _mode = AppMode.BSpline; _bspMgr.NewNurbs();   });
+        SideHBox(vbox, "Édit/Ajout",    () => _bspMgr.ToggleEditMode(),
+                       "Degré +",       () => _bspMgr.DegreeUp());
+        SideHBox(vbox, "Degré −",       () => _bspMgr.DegreeDown(),
+                       "Nœuds",         () => _bspMgr.ToggleKnots());
+        SideHBox(vbox, "Cercle",        () => { _mode = AppMode.BSpline; _bspMgr.LoadDemoCircle();    },
+                       "Ellipse",       () => { _mode = AppMode.BSpline; _bspMgr.LoadDemoEllipse();   });
+        SideHBox(vbox, "Parabole",      () => { _mode = AppMode.BSpline; _bspMgr.LoadDemoParabola();  },
+                       "Hyperbole",     () => { _mode = AppMode.BSpline; _bspMgr.LoadDemoHyperbola(); });
+        vbox.AddChild(new HSeparator());
+
+        // ── Transformées (Bézier + BSpline) ─────────────────────────────
+        SideLabel(vbox, "─ TRANSFORM. ─");
+        SideHBox(vbox, "← Trans", () => DoTranslate(-_transStep, 0),
+                       "→ Trans",  () => DoTranslate( _transStep, 0));
+        SideHBox(vbox, "↑ Trans",  () => DoTranslate(0, -_transStep),
+                       "↓ Trans",  () => DoTranslate(0,  _transStep));
+        SideHBox(vbox, "↻ CW",     () => DoRotate(+1f),
+                       "↺ CCW",    () => DoRotate(-1f));
+        SideHBox(vbox, "⊕ Scale+", () => DoScale(_scaleStep),
+                       "⊖ Scale−", () => DoScale(1f / _scaleStep));
+        SideHBox(vbox, "CisH+",    () => DoShearH(+1f),
+                       "CisH−",    () => DoShearH(-1f));
+        SideHBox(vbox, "CisV+",    () => DoShearV(+1f),
+                       "CisV−",    () => DoShearV(-1f));
+        SideLabel(vbox, "Pas :");
+        _transStepLbl  = SideStepRow(vbox, "T:", "30px",  TransStepDown, TransStepUp);
+        _rotStepLbl    = SideStepRow(vbox, "R:", "15°",   RotStepDown,   RotStepUp);
+        _scaleStepLbl  = SideStepRow(vbox, "S:", "10%",   ScaleStepDown, ScaleStepUp);
+        _shearStepLbl  = SideStepRow(vbox, "H:", "0.10",  ShearStepDown, ShearStepUp);
         vbox.AddChild(new HSeparator());
 
         // ── Polygone ────────────────────────────────────────────────────
@@ -473,6 +561,61 @@ public partial class Main : Node2D
         btn.AddThemeFontSizeOverride("font_size", 12);
         btn.Pressed += action;
         parent.AddChild(btn);
+    }
+
+    /// <summary>Two equal-width buttons on one row.</summary>
+    private static void SideHBox(VBoxContainer parent,
+        string labelA, Action actionA,
+        string labelB, Action actionB)
+    {
+        var hbox = new HBoxContainer();
+        hbox.SizeFlagsHorizontal = Control.SizeFlags.Fill;
+        parent.AddChild(hbox);
+
+        var btnA = new Button();
+        btnA.Text = labelA;
+        btnA.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        btnA.AddThemeFontSizeOverride("font_size", 11);
+        btnA.Pressed += actionA;
+        hbox.AddChild(btnA);
+
+        var btnB = new Button();
+        btnB.Text = labelB;
+        btnB.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        btnB.AddThemeFontSizeOverride("font_size", 11);
+        btnB.Pressed += actionB;
+        hbox.AddChild(btnB);
+    }
+
+    /// <summary>[−] value-label [+] step control row. Returns the label.</summary>
+    private static Label SideStepRow(VBoxContainer parent,
+        string prefix, string initVal,
+        Action onMinus, Action onPlus)
+    {
+        var hbox = new HBoxContainer();
+        hbox.SizeFlagsHorizontal = Control.SizeFlags.Fill;
+        parent.AddChild(hbox);
+
+        var minus = new Button(); minus.Text = "−";
+        minus.AddThemeFontSizeOverride("font_size", 11);
+        minus.CustomMinimumSize = new Vector2(22, 0);
+        minus.Pressed += onMinus;
+        hbox.AddChild(minus);
+
+        var lbl = new Label();
+        lbl.Text = $"{prefix}{initVal}";
+        lbl.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        lbl.HorizontalAlignment = HorizontalAlignment.Center;
+        lbl.AddThemeFontSizeOverride("font_size", 10);
+        hbox.AddChild(lbl);
+
+        var plus = new Button(); plus.Text = "+";
+        plus.AddThemeFontSizeOverride("font_size", 11);
+        plus.CustomMinimumSize = new Vector2(22, 0);
+        plus.Pressed += onPlus;
+        hbox.AddChild(plus);
+
+        return lbl;
     }
 
     private void UpdateHud()
