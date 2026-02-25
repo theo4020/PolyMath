@@ -27,7 +27,7 @@ namespace PolyMaths.Managers
         private string _benchText    = "";
 
         // ── Multi-selection ──────────────────────────────────────────────────
-        private HashSet<BezierCurve> _multiSelected = new HashSet<BezierCurve>();
+        private List<BezierCurve> _multiSelected = new List<BezierCurve>();
         public int MultiSelectedCount => _multiSelected.Count;
 
         // ── Colors ───────────────────────────────────────────────────────────
@@ -235,7 +235,9 @@ namespace PolyMaths.Managers
         {
             if (_activeNode == null) return;
             var curve = _activeNode.Value;
-            if (!_multiSelected.Add(curve))   // Add() returns false when already present
+            if (!_multiSelected.Contains(curve))
+                _multiSelected.Add(curve);
+            else
                 _multiSelected.Remove(curve);
         }
 
