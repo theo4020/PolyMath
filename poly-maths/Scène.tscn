@@ -7,7 +7,11 @@
 
 [node name="Canva" type="Node2D" parent="."]
 script = ExtResource("1_apscn")
+_polygonColor = Color(0.09346505, 0.2125682, 0.58715767, 1)
+_windowColor = Color(0.60400987, 0.47064304, 0, 1)
+_resultColor = Color(0.19584897, 0.48728192, 0.13972038, 1)
 _pointRadius = 10.0
+Nbpas = 9
 
 [node name="Control" type="Control" parent="."]
 layout_mode = 3
@@ -26,10 +30,31 @@ offset_left = -100.0
 offset_right = 100.0
 offset_bottom = 401.0
 
-[node name="BtnDraw" type="Button" parent="Control/VBoxContainer"]
+[node name="BtnDrawPolygon" type="Button" parent="Control/VBoxContainer"]
 layout_mode = 2
 text = "
-Draw
+Draw Polygon
+
+"
+
+[node name="BtnDrawBezier" type="Button" parent="Control/VBoxContainer"]
+layout_mode = 2
+text = "
+Draw Bezier
+
+"
+
+[node name="BtnShowPascal" type="Button" parent="Control/VBoxContainer"]
+layout_mode = 2
+text = "
+Show Pascal
+
+"
+
+[node name="BtnShowCasteljau" type="Button" parent="Control/VBoxContainer"]
+layout_mode = 2
+text = "
+Show Casteljau
 
 "
 
