@@ -12,7 +12,11 @@
       "Bash(git stash:*)",
       "Bash(ls \"C:\\\\Users\\\\ariel\\\\Documents\\\\GitHub\\\\PolyMath\\\\poly-maths\"\" && echo \"---\" && ls \"C:UsersarielDocumentsGitHubPolyMathPolymath-Enzopoly-maths\"\")",
       "Bash(del \"C:\\\\Users\\\\ariel\\\\Documents\\\\GitHub\\\\PolyMath\\\\nul\")",
-      "Bash(del \"C:\\\\Users\\\\ariel\\\\Documents\\\\GitHub\\\\PolyMath\\\\poly-maths\\\\nul\")"
+      "Bash(del \"C:\\\\Users\\\\ariel\\\\Documents\\\\GitHub\\\\PolyMath\\\\poly-maths\\\\nul\")",
+      "Bash(python3.exe --version)",
+      "Bash(python.exe --version)",
+      "Bash(py --version)",
+      "Bash(py -:*)"
     ]
   }
 }

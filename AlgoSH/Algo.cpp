@@ -62,9 +62,9 @@ Point Algo::intersection(Point P1, Point P2, Point P3, Point P4) {
         { (1/detA) * d , (1/detA) * (-b) },
         { (1/detA) * (-c) , (1/detA) * a }
     };
-    int BX = P3.X() - P1(X);
-    int BY = P3.Y() - P1(Y);
-    int t = X[O][0] * BX + X[O][1] * BY;
+    int BX = P3.X() - P1.X();
+    int BY = P3.Y() - P1.Y();
+    int t = X[0][0] * BX + X[0][1] * BY;
     Point Result( P1.X() + (P2.X() * t) - (P1.X() * t) , P1.Y() + (P2.Y() * t) - (P1.Y() * t) );
     return Result;
 
