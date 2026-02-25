@@ -156,6 +156,47 @@ namespace PolyMaths.Managers
 
         public void ApplyTransform(Matrix3x3 m) { ActiveCurve?.ApplyTransform(m); }
 
+        public Point2D GetPivot()
+        {
+            var curve = ActiveCurve;
+            if (curve == null) return default;
+            var pts = curve.ControlPoints;
+            if (pts.Count == 0) return default;
+
+            if (_editMode && _dragIndex >= 0 && _dragIndex < pts.Count)
+                return pts[_dragIndex];
+
+            float cx = 0, cy = 0;
+            foreach (var p in pts) { cx += p.x; cy += p.y; }
+            return new Point2D(cx / pts.Count, cy / pts.Count);
+        }
+
+        public void Translate(float dx, float dy)
+            => ActiveCurve?.ApplyTransform(Matrix3x3.Translation(dx, dy));
+
+        public void Rotate(float angle)
+        {
+            if (ActiveCurve == null) return;
+            var p = GetPivot();
+            var m = Matrix3x3.Translation(p.x, p.y)
+                  * Matrix3x3.Rotation(angle)
+                  * Matrix3x3.Translation(-p.x, -p.y);
+            ActiveCurve.ApplyTransform(m);
+        }
+
+        public void Scale(float factor)
+        {
+            if (ActiveCurve == null) return;
+            var p = GetPivot();
+            var m = Matrix3x3.Translation(p.x, p.y)
+                  * Matrix3x3.Scaling(factor, factor)
+                  * Matrix3x3.Translation(-p.x, -p.y);
+            ActiveCurve.ApplyTransform(m);
+        }
+
+        public void ShearH(float delta) => ActiveCurve?.ApplyTransform(Matrix3x3.Shearing(delta, 0f));
+        public void ShearV(float delta) => ActiveCurve?.ApplyTransform(Matrix3x3.Shearing(0f, delta));
+
         public void NewBSpline()
         {
             _activeBs = _bsplines.AddLast(new BSplineCurve());
@@ -221,6 +262,14 @@ namespace PolyMaths.Managers
             {
                 bool sel = isActive && _editMode && i == _dragIndex;
                 canvas.DrawCircle(P(pts[i]), DotRadius, sel ? Colors.Red : Colors.Black);
+            }
+
+            // Pivot indicator in edit mode
+            if (_editMode && curve == ActiveCurve)
+            {
+                var pivot = GetPivot();
+                canvas.DrawCircle(new Vector2(pivot.x, pivot.y), DotRadius + 4, Colors.White);
+                canvas.DrawCircle(new Vector2(pivot.x, pivot.y), DotRadius + 2, Colors.Black);
             }
 
             if (pts.Count > curve.Degree)
