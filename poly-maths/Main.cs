@@ -330,7 +330,7 @@ public partial class Main : Node2D
             case M_BEZ_DELETE_MARKED: _bezMgr.DeleteMarked();            break;
             case M_BEZ_DELETE_ALL:    _bezMgr.DeleteAll();               break;
             case M_BEZ_TOGGLE_MODE:   _bezMgr.ToggleEditMode();  break;
-            case M_BEZ_TOGGLE_METHOD: _bezMgr.ToggleMethod();    break;
+            case M_BEZ_TOGGLE_METHOD: _bezMgr.ToggleShowPascal(); break;
             case M_BEZ_STEP_UP:       _bezMgr.StepUp();          break;
             case M_BEZ_STEP_DOWN:     _bezMgr.StepDown();        break;
             case M_BEZ_JOIN_C0:       _bezMgr.JoinLastTwo(Continuity.C0); break;
@@ -420,7 +420,8 @@ public partial class Main : Node2D
         SideBtn(vbox, "Suppr. active",         () => _bezMgr.DeleteActiveCurve());
         SideBtn(vbox, "Suppr. marquées",       () => _bezMgr.DeleteMarked());
         SideBtn(vbox, "Suppr. toutes",         () => _bezMgr.DeleteAll());
-        SideBtn(vbox, "Méthode",        () => _bezMgr.ToggleMethod());
+        SideBtn(vbox, "Pascal on/off",     () => _bezMgr.ToggleShowPascal());
+        SideBtn(vbox, "Casteljau on/off",  () => _bezMgr.ToggleShowCasteljau());
         SideBtn(vbox, "Raccord C0",     () => _bezMgr.JoinLastTwo(Continuity.C0));
         SideBtn(vbox, "Raccord C1",     () => _bezMgr.JoinLastTwo(Continuity.C1));
         SideBtn(vbox, "Raccord C2",     () => _bezMgr.JoinLastTwo(Continuity.C2));

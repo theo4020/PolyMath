@@ -20,6 +20,7 @@ namespace PolyMaths.Tests
             TestMultiplicity();
             TestC0C1C2Joining();
             TestBenchmarkRuns();
+            TestPascalEqualsCasteljau();
             PrintSummary();
         }
 
@@ -164,6 +165,28 @@ namespace PolyMaths.Tests
             Logger.Data("Direct   (ms)", dMs);
             Logger.Data("Casteljau (ms)", kMs);
             Assert("Both methods complete without exception", true);
+            Logger.SectionEnd();
+        }
+
+        private void TestPascalEqualsCasteljau()
+        {
+            Logger.Section("TEST B8: Pascal == Casteljau on same control points");
+            var c = new BezierCurve();
+            c.AddPoint(new Point2D(0,   0));
+            c.AddPoint(new Point2D(50, 120));
+            c.AddPoint(new Point2D(120, 40));
+            c.AddPoint(new Point2D(200,  0));
+
+            for (int i = 0; i <= 20; i++)
+            {
+                float t = i / 20f;
+                var d = c.EvaluateDirect(t);
+                var k = c.EvaluateCasteljau(t);
+                Assert($"t={t:F2}: Pascal==Casteljau x",
+                    Math.Abs(d.x - k.x) < 0.1f);
+                Assert($"t={t:F2}: Pascal==Casteljau y",
+                    Math.Abs(d.y - k.y) < 0.1f);
+            }
             Logger.SectionEnd();
         }
 

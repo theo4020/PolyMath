@@ -16,7 +16,10 @@ namespace PolyMaths.Managers
         private bool   _editMode     = false;   // false = append, true = drag
         private int    _dragIndex    = -1;
         private bool   _dragging     = false;
-        private bool   _useCasteljau = false;
+        private bool _showPascal    = true;
+        private bool _showCasteljau = false;
+        public Color PascalColor     { get; set; } = new Color(0.2f, 0.6f, 1f);    // blue
+        public Color CasteljauColor  { get; set; } = new Color(1f, 0.35f, 0.1f);   // orange-red
         private string _benchText    = "";
 
         // ── Multi-selection ──────────────────────────────────────────────────
@@ -38,15 +41,17 @@ namespace PolyMaths.Managers
         {
             get
             {
-                string method = _useCasteljau ? "Casteljau" : "Direct";
+                string algos = (_showPascal    ? "Pascal "   : "")
+                             + (_showCasteljau ? "Casteljau" : "");
+                if (algos == "") algos = "(aucun)";
                 string mode   = _editMode ? "ÉDITION" : "AJOUT";
                 int step = _activeNode?.Value.Step ?? 0;
                 int curveCount = _curves.Count;
                 string mark = _multiSelected.Count > 0
                     ? string.Format("  [Marquées:{0}]", _multiSelected.Count) : "";
                 return string.Format(
-                    "BEZIER | Mode:{0} | Méthode:{1} | Pas:{2} | Courbes:{3}{4}\n{5}\n{6}",
-                    mode, method, step, curveCount, mark,
+                    "BEZIER | Mode:{0} | Algos:{1} | Pas:{2} | Courbes:{3}{4}\n{5}\n{6}",
+                    mode, algos, step, curveCount, mark,
                     _editMode ? "ClicG=sélect/insérer  DblClic=suppr pt  Glisser=déplacer  Suppr=retirer  [Espace]=marquer"
                               : "ClicG=ajouter  ClicD=menu  [↑↓←→] Trans  [R] Rot  [S] Éch  [H] Cis  [Espace]=marquer",
                     _benchText);
@@ -224,7 +229,8 @@ namespace PolyMaths.Managers
             if (_activeNode?.Previous != null) _activeNode = _activeNode.Previous;
         }
 
-        public void ToggleMethod()   { _useCasteljau = !_useCasteljau; _benchText = ""; }
+        public void ToggleShowPascal()    { _showPascal    = !_showPascal;    _benchText = ""; }
+        public void ToggleShowCasteljau() { _showCasteljau = !_showCasteljau; _benchText = ""; }
         public void ToggleEditMode() { _editMode = !_editMode; _dragIndex = -1; _dragging = false; }
 
         // ── Transforms ───────────────────────────────────────────────────────
@@ -324,10 +330,12 @@ namespace PolyMaths.Managers
         private void DrawCurve(Node2D canvas, BezierCurve curve, bool isActive, bool isMarked)
         {
             var pts = curve.ControlPoints;
-            Color cc = isActive ? ActiveCurveColor : (isMarked ? MarkedCurveColor : CurveColor);
 
-            // Evaluate curve points once (used for both fill and outline)
-            var curvePts = pts.Count >= 2 ? curve.GetPoints(_useCasteljau) : null;
+            // Pascal and/or Casteljau evaluation
+            var pascalPts    = (pts.Count >= 2 && _showPascal)    ? curve.GetPoints(false) : null;
+            var casteljauPts = (pts.Count >= 2 && _showCasteljau) ? curve.GetPoints(true)  : null;
+            // curvePts used for fill: prefer Pascal; fallback to Casteljau
+            var curvePts = pascalPts ?? casteljauPts;
 
             // Scanline fill — recomputed each frame so it tracks control-point drags
             if (curve.FillEnabled && curvePts != null && curvePts.Count >= 3)
@@ -348,10 +356,15 @@ namespace PolyMaths.Managers
                 canvas.DrawCircle(P(pts[i]), DotRadius, sel ? SelectedPointColor : Colors.Black);
             }
 
-            // Curve outline
-            if (curvePts != null)
-                for (int i = 0; i < curvePts.Count - 1; i++)
-                    canvas.DrawLine(P(curvePts[i]), P(curvePts[i + 1]), cc, 2);
+            // Pascal curve
+            if (pascalPts != null)
+                for (int i = 0; i < pascalPts.Count - 1; i++)
+                    canvas.DrawLine(P(pascalPts[i]), P(pascalPts[i + 1]), PascalColor, 2);
+
+            // Casteljau curve
+            if (casteljauPts != null)
+                for (int i = 0; i < casteljauPts.Count - 1; i++)
+                    canvas.DrawLine(P(casteljauPts[i]), P(casteljauPts[i + 1]), CasteljauColor, 2);
         }
 
         // ── Helpers ──────────────────────────────────────────────────────────
