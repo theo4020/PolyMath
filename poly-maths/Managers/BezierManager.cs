@@ -369,8 +369,7 @@ namespace PolyMaths.Managers
             // C2: B.P2 based on second derivative continuity
             if (b.ControlPoints.Count < 3 || n < 2) return;
             var Pn_2 = a.ControlPoints[n - 2];
-            // Formula: B.P2 = 2*c1P1 - ((n-1)/n * Pn + 1/n * Pn_1)
-            var c2P2 = c1P1 * 2f - (Pn * ((float)(n - 1) / n) + Pn_1 * (1f / n));
+            var c2P2 = Pn_2 + 2 * (c1P1 - Pn_1);
             b.MovePoint(2, c2P2);
         }
 
