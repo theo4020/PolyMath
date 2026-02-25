@@ -1,4 +1,5 @@
 using Godot;
+using System;
 using System.Collections.Generic;
 using PolyMaths.Algorithms;
 
@@ -219,6 +220,24 @@ namespace PolyMaths.Managers
             _multiSelected.Clear();
         }
 
+        /// <summary>
+        /// Creates a new Bézier curve with 50 control points in a 3-cycle sine wave.
+        /// Demonstrates Runge's oscillation phenomenon on high-degree polynomials.
+        /// </summary>
+        public void LoadDemoSine50()
+        {
+            var curve = new BezierCurve();
+            for (int i = 0; i < 50; i++)
+            {
+                float t = i / 49f;
+                float x = 80f  + i * 33f;
+                float y = 420f + 170f * (float)Math.Sin(t * 6 * Math.PI);
+                curve.AddPoint(new Point2D(x, y));
+            }
+            _activeNode = _curves.AddLast(curve);
+            _editMode   = false;
+        }
+
         public void SelectNext()
         {
             if (_activeNode?.Next != null) _activeNode = _activeNode.Next;
@@ -238,6 +257,32 @@ namespace PolyMaths.Managers
         {
             _activeNode?.Value.ApplyTransform(m);
         }
+
+        public void Translate(float dx, float dy)
+            => _activeNode?.Value.ApplyTransform(Matrix3x3.Translation(dx, dy));
+
+        public void Rotate(float angle)
+        {
+            if (_activeNode == null) return;
+            var p = GetPivot();
+            var m = Matrix3x3.Translation(p.x, p.y)
+                  * Matrix3x3.Rotation(angle)
+                  * Matrix3x3.Translation(-p.x, -p.y);
+            _activeNode.Value.ApplyTransform(m);
+        }
+
+        public void Scale(float factor)
+        {
+            if (_activeNode == null) return;
+            var p = GetPivot();
+            var m = Matrix3x3.Translation(p.x, p.y)
+                  * Matrix3x3.Scaling(factor, factor)
+                  * Matrix3x3.Translation(-p.x, -p.y);
+            _activeNode.Value.ApplyTransform(m);
+        }
+
+        public void ShearH(float delta) => _activeNode?.Value.ApplyTransform(Matrix3x3.Shearing(delta, 0f));
+        public void ShearV(float delta) => _activeNode?.Value.ApplyTransform(Matrix3x3.Shearing(0f, delta));
 
         // ── Continuity joining ───────────────────────────────────────────────
         /// <summary>
@@ -356,6 +401,14 @@ namespace PolyMaths.Managers
                 canvas.DrawCircle(P(pts[i]), DotRadius, sel ? SelectedPointColor : Colors.Black);
             }
 
+            // Pivot indicator (white ring) in edit mode
+            if (isActive && _editMode)
+            {
+                var pivot = GetPivot();
+                canvas.DrawCircle(P(pivot), DotRadius + 4, Colors.White);
+                canvas.DrawCircle(P(pivot), DotRadius + 2, Colors.Black);
+            }
+
             // Pascal curve
             if (pascalPts != null)
                 for (int i = 0; i < pascalPts.Count - 1; i++)
@@ -379,6 +432,24 @@ namespace PolyMaths.Managers
             if (len2 < 1e-6f) return p.DistanceTo(a);
             float t = Mathf.Clamp((p - a).Dot(ab) / len2, 0f, 1f);
             return p.DistanceTo(a + ab * t);
+        }
+
+        /// <summary>
+        /// Returns the current rotation/scale pivot: the selected control point if one
+        /// is active in edit mode, or the centroid of all control points otherwise.
+        /// </summary>
+        public Point2D GetPivot()
+        {
+            if (_activeNode == null) return default;
+            var pts = _activeNode.Value.ControlPoints;
+            if (pts.Count == 0) return default;
+
+            if (_editMode && _dragIndex >= 0 && _dragIndex < pts.Count)
+                return pts[_dragIndex];
+
+            float cx = 0, cy = 0;
+            foreach (var p in pts) { cx += p.x; cy += p.y; }
+            return new Point2D(cx / pts.Count, cy / pts.Count);
         }
     }
 }

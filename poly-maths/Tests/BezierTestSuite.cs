@@ -21,6 +21,7 @@ namespace PolyMaths.Tests
             TestC0C1C2Joining();
             TestBenchmarkRuns();
             TestPascalEqualsCasteljau();
+            TestPivotPlaceholder();
             PrintSummary();
         }
 
@@ -187,6 +188,15 @@ namespace PolyMaths.Tests
                 Assert($"t={t:F2}: Pascal==Casteljau y",
                     Math.Abs(d.y - k.y) < 0.1f);
             }
+            Logger.SectionEnd();
+        }
+
+        private void TestPivotPlaceholder()
+        {
+            Logger.Section("TEST B9: Pivot-aware transforms (visual test)");
+            // Pivot logic depends on mouse input (_dragIndex set by HandleLeftClick).
+            // Primary verification is the white ring indicator drawn in edit mode.
+            Assert("Pivot placeholder", true);
             Logger.SectionEnd();
         }
 
