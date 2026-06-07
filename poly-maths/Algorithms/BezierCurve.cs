@@ -10,27 +10,29 @@ namespace PolyMaths.Algorithms
     /// </summary>
     public class BezierCurve
     {
-        private readonly List<Point2D> _controlPoints = new List<Point2D>();
+        private readonly List<Point2D> _controlPoints2D = new List<Point2D>();
+        private readonly List<Point3D> _controlPoints3D = new List<Point3D>();
         private long[][] _pascalTriangle; // Full Pascal's triangle up to current degree
         private long[] _pascalRow;        // Current degree row: C(n,0)..C(n,n)
         private bool _dirty = true;       // True when degree changed → triangle cache invalid
 
         // ── Public properties ────────────────────────────────────────────────
-        public IReadOnlyList<Point2D> ControlPoints => _controlPoints;
+        public IReadOnlyList<Point2D> ControlPoints => _controlPoints2D;
         public int  Step        { get; set; } = 100;
         public bool FillEnabled { get; set; } = false;
-        public int  Degree => _controlPoints.Count - 1;
+        public int  Degree => _controlPoints2D.Count - 1;
 
         // ── Control point management ─────────────────────────────────────────
-        public void AddPoint(Point2D p)             { _controlPoints.Add(p);              _dirty = true; }
-        public void InsertPoint(int index, Point2D p){ _controlPoints.Insert(index, p);     _dirty = true; }
-        public void RemovePoint(int i)              { _controlPoints.RemoveAt(i);          _dirty = true; }
-        public void MovePoint(int i, Point2D p)     { _controlPoints[i] = p; /* Pascal unaffected */ }
+        public void AddPoint(Point2D p)             { _controlPoints2D.Add(p);              _dirty = true; }
+        public void AddPoint3D(Point3D p)             { _controlPoints3D.Add(p);              _dirty = true; }
+        public void InsertPoint(int index, Point2D p){ _controlPoints2D.Insert(index, p);     _dirty = true; }
+        public void RemovePoint(int i)              { _controlPoints2D.RemoveAt(i);          _dirty = true; }
+        public void MovePoint(int i, Point2D p)     { _controlPoints2D[i] = p; /* Pascal unaffected */ }
 
         public void ApplyTransform(Matrix3x3 m)
         {
-            for (int i = 0; i < _controlPoints.Count; i++)
-                _controlPoints[i] = m.TransformPoint(_controlPoints[i]);
+            for (int i = 0; i < _controlPoints2D.Count; i++)
+                _controlPoints2D[i] = m.TransformPoint(_controlPoints2D[i]);
         }
 
         // ── Pascal's triangle cache ──────────────────────────────────────────
@@ -64,7 +66,7 @@ namespace PolyMaths.Algorithms
         {
             int n = Degree;
             if (n < 0) return default;
-            if (n == 0) return _controlPoints[0];
+            if (n == 0) return _controlPoints2D[0];
             if (_dirty) RebuildPascal();
 
             float u = 1f - t;
@@ -72,25 +74,60 @@ namespace PolyMaths.Algorithms
             for (int i = 0; i <= n; i++)
             {
                 float b = _pascalRow[i] * (float)Math.Pow(t, i) * (float)Math.Pow(u, n - i);
-                x += b * _controlPoints[i].x;
-                y += b * _controlPoints[i].y;
+                x += b * _controlPoints2D[i].x;
+                y += b * _controlPoints2D[i].y;
             }
             return new Point2D(x, y);
+        }
+        
+        public Point3D EvaluateDirect3D(float t)
+        {
+            int n = Degree;
+            if (n < 0) return default;
+            if (n == 0) return _controlPoints3D[0];
+            if (_dirty) RebuildPascal();
+
+            float u = 1f - t;
+            float x = 0f, y = 0f, z = 0f;
+            for (int i = 0; i <= n; i++)
+            {
+                float b = _pascalRow[i] * (float)Math.Pow(t, i) * (float)Math.Pow(u, n - i);
+                x += b * _controlPoints3D[i].x;
+                y += b * _controlPoints3D[i].y;
+                z += b * _controlPoints3D[i].z;
+            }
+            return new Point3D(x, y, z);
         }
 
         /// <summary>Iterative de Casteljau: reduces degree r times in-place.</summary>
         public Point2D EvaluateCasteljau(float t)
         {
-            int n = _controlPoints.Count;
+            int n = _controlPoints2D.Count;
             if (n == 0) return default;
-            if (n == 1) return _controlPoints[0];
+            if (n == 1) return _controlPoints2D[0];
 
             var d = new Point2D[n];
-            for (int i = 0; i < n; i++) d[i] = _controlPoints[i];
+            for (int i = 0; i < n; i++) d[i] = _controlPoints2D[i];
 
             for (int r = 1; r < n; r++)
                 for (int i = 0; i < n - r; i++)
                     d[i] = d[i] * (1f - t) + d[i + 1] * t;
+
+            return d[0];
+        }
+        
+        public Point3D EvaluateCasteljau3D(float t)
+        {
+            int n = _controlPoints3D.Count;
+            if (n == 0) return default;
+            if (n == 1) return _controlPoints3D[0];
+
+            var d = new Point3D[n];
+            for (int i = 0; i < n; i++) d[i] = _controlPoints3D[i];
+
+            for (int r = 1; r < n; r++)
+            for (int i = 0; i < n - r; i++)
+                d[i] = d[i] * (1f - t) + d[i + 1] * t;
 
             return d[0];
         }
@@ -99,7 +136,7 @@ namespace PolyMaths.Algorithms
         public List<Point2D> GetPoints(bool useCasteljau = false)
         {
             var pts = new List<Point2D>(Step + 1);
-            if (_controlPoints.Count < 2) return pts;
+            if (_controlPoints2D.Count < 2) return pts;
             for (int i = 0; i <= Step; i++)
             {
                 float t = (float)i / Step;
@@ -127,7 +164,7 @@ namespace PolyMaths.Algorithms
         /// <summary>Benchmark both Pascal and Casteljau with multiple reps for reliable stats.</summary>
         public (BenchStats pascal, BenchStats casteljau) BenchmarkBoth(int samples = 200_000, int reps = 5)
         {
-            if (_controlPoints.Count < 2)
+            if (_controlPoints2D.Count < 2)
                 return (new BenchStats(new double[]{0}, samples, reps),
                         new BenchStats(new double[]{0}, samples, reps));
 
@@ -156,7 +193,7 @@ namespace PolyMaths.Algorithms
         /// <summary>Benchmark Pascal/Bernstein alone with multiple reps.</summary>
         public BenchStats BenchmarkPascal(int samples = 200_000, int reps = 5)
         {
-            if (_controlPoints.Count < 2) return new BenchStats(new double[]{0}, samples, reps);
+            if (_controlPoints2D.Count < 2) return new BenchStats(new double[]{0}, samples, reps);
             var times = new double[reps];
             for (int r = 0; r < reps; r++)
             {
