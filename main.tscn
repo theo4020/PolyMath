@@ -1,0 +1,183 @@
+[gd_scene load_steps=14 format=3 uid="uid://dul75sje2l5eq"]
+
+[ext_resource type="Script" path="res://src/OrbitCamera.cs" id="1_orbit"]
+[ext_resource type="Script" path="res://src/GroundGrid.cs" id="2_ground"]
+[ext_resource type="Script" path="res://src/SurfaceCours1.cs" id="3_surf"]
+[ext_resource type="Script" path="res://src/TopBar.cs" id="4_topbar"]
+[ext_resource type="Script" path="res://src/UiPanel.cs" id="5_uipanel"]
+[ext_resource type="Script" path="res://src/ProfileEditor.cs" id="6_editor"]
+[ext_resource type="Script" path="res://src/SurfaceCours2.cs" id="7_surf2"]
+[ext_resource type="Script" path="res://src/UiPanelCours2.cs" id="8_uipanel2"]
+[ext_resource type="Script" path="res://src/CameraMenu.cs" id="9_cammenu"]
+[ext_resource type="Script" path="res://src/LightMenu.cs" id="10_lightmenu"]
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMat_main"]
+sky_top_color = Color(0.16, 0.21, 0.32, 1)
+sky_horizon_color = Color(0.09, 0.11, 0.15, 1)
+sky_curve = 0.15
+ground_bottom_color = Color(0.04, 0.05, 0.07, 1)
+ground_horizon_color = Color(0.08, 0.1, 0.14, 1)
+sky_energy_multiplier = 1.0
+
+[sub_resource type="Sky" id="Sky_main"]
+sky_material = SubResource("SkyMat_main")
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 1
+background_color = Color(0.078, 0.086, 0.11, 1)
+sky = SubResource("Sky_main")
+ambient_light_source = 2
+ambient_light_color = Color(0.55, 0.6, 0.7, 1)
+ambient_light_energy = 0.4
+reflected_light_source = 2
+tonemap_mode = 3
+tonemap_white = 6.0
+ssao_enabled = true
+ssao_radius = 1.2
+ssao_intensity = 1.6
+ssao_power = 1.5
+glow_enabled = true
+glow_intensity = 0.5
+glow_strength = 1.0
+glow_bloom = 0.15
+glow_blend_mode = 1
+glow_hdr_threshold = 0.9
+
+[node name="Main" type="Node3D"]
+
+[node name="OrbitCamera" type="Camera3D" parent="."]
+projection = 1
+size = 4.0
+script = ExtResource("1_orbit")
+Distance = 5.0
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 4, 6, 4)
+light_energy = 1.1
+shadow_enabled = true
+
+[node name="FillLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.707107, 0.353553, -0.612372, 0, 0.866025, 0.5, 0.707107, -0.353553, 0.612372, -4, 4, -3)
+light_color = Color(0.78, 0.84, 1, 1)
+light_energy = 0.45
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_main")
+
+[node name="GroundGrid" type="MeshInstance3D" parent="."]
+script = ExtResource("2_ground")
+Extent = 3.0
+Step = 0.5
+
+[node name="SurfaceCours1" type="MeshInstance3D" parent="."]
+script = ExtResource("3_surf")
+ShowWireframe = true
+
+[node name="SurfaceCours2" type="MeshInstance3D" parent="."]
+visible = false
+script = ExtResource("7_surf2")
+ShowWireframe = true
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="CameraMenu" type="Control" parent="UI"]
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -296.0
+offset_top = 58.0
+offset_right = -12.0
+offset_bottom = 880.0
+script = ExtResource("9_cammenu")
+CameraPath = NodePath("../../OrbitCamera")
+OtherMenuPath = NodePath("../LightMenu")
+
+[node name="LightMenu" type="Control" parent="UI"]
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -296.0
+offset_top = 58.0
+offset_right = -12.0
+offset_bottom = 880.0
+script = ExtResource("10_lightmenu")
+MainLightPath = NodePath("../../DirectionalLight3D")
+FillLightPath = NodePath("../../FillLight")
+WorldEnvPath = NodePath("../../WorldEnvironment")
+OtherMenuPath = NodePath("../CameraMenu")
+
+[node name="CameraHint" type="Label" parent="UI"]
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = -30.0
+offset_right = 320.0
+offset_bottom = -8.0
+text = "C — caméra   ·   L — lumière"
+modulate = Color(0.7, 0.75, 0.85, 0.7)
+
+[node name="TopBar" type="Control" parent="UI"]
+anchor_right = 1.0
+offset_bottom = 50.0
+script = ExtResource("4_topbar")
+Cours1LayerPath = NodePath("../Cours1Layer")
+Cours2LayerPath = NodePath("../Cours2Layer")
+Cours1SurfacePath = NodePath("../../SurfaceCours1")
+Cours2SurfacePath = NodePath("../../SurfaceCours2")
+UiPanelPath = NodePath("../Cours1Layer/UiPanel")
+UiPanel2Path = NodePath("../Cours2Layer/UiPanelCours2")
+
+[node name="Cours1Layer" type="Control" parent="UI"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 50.0
+mouse_filter = 2
+
+[node name="UiPanel" type="Control" parent="UI/Cours1Layer"]
+anchor_bottom = 1.0
+offset_right = 280.0
+script = ExtResource("5_uipanel")
+SurfacePath = NodePath("../../../SurfaceCours1")
+CameraPath = NodePath("../../../OrbitCamera")
+GroundGridPath = NodePath("../../../GroundGrid")
+ProfileEditorPath = NodePath("../ProfileEditor")
+AmeEditorPath = NodePath("../AmeEditor")
+WorldEnvPath = NodePath("../../../WorldEnvironment")
+
+[node name="ProfileEditor" type="Control" parent="UI/Cours1Layer"]
+offset_left = 290.0
+offset_top = 8.0
+offset_right = 690.0
+offset_bottom = 408.0
+mouse_filter = 0
+script = ExtResource("6_editor")
+SurfacePath = NodePath("../../../SurfaceCours1")
+CurveKind = "profile"
+BoundsMin = Vector2(-1.8, -1.8)
+BoundsMax = Vector2(1.8, 1.8)
+visible = false
+
+[node name="AmeEditor" type="Control" parent="UI/Cours1Layer"]
+offset_left = 290.0
+offset_top = 416.0
+offset_right = 690.0
+offset_bottom = 808.0
+mouse_filter = 0
+script = ExtResource("6_editor")
+SurfacePath = NodePath("../../../SurfaceCours1")
+CurveKind = "ame"
+BoundsMin = Vector2(-2.5, -2.5)
+BoundsMax = Vector2(2.5, 2.5)
+visible = false
+
+[node name="Cours2Layer" type="Control" parent="UI"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 50.0
+mouse_filter = 2
+visible = false
+
+[node name="UiPanelCours2" type="Control" parent="UI/Cours2Layer"]
+anchor_bottom = 1.0
+offset_right = 280.0
+script = ExtResource("8_uipanel2")
+SurfacePath = NodePath("../../../SurfaceCours2")
+CameraPath = NodePath("../../../OrbitCamera")

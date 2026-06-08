@@ -1,0 +1,5 @@
+# Code fourni par l'équipe (PolyMaths.Algorithms) — réutilisé tel quel.
+# On neutralise les avertissements nullable propres à ce code sans modifier
+# les fichiers sources eux-mêmes.
+[*.cs]
+dotnet_diagnostic.CS8618.severity = none

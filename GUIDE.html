@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maths Power — Guide du projet</title>
+<style>
+  :root{
+    --bg:#0e1016; --bg2:#141822; --panel:#171b26; --panel2:#1d2230;
+    --line:#262c3b; --line2:#323a4d;
+    --tx:#c9cfdc; --tx-dim:#8b93a7; --tx-strong:#eef1f8;
+    --vi-purple:#5b2a86; --vi-blue:#3b528b; --vi-teal:#21918c;
+    --vi-green:#5ec962; --vi-yellow:#fde725;
+    --accent:#6aa0ff; --accent-soft:#243049;
+    --code:#0b0d13; --radius:14px;
+    --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth;scroll-padding-top:24px}
+  body{
+    margin:0;background:var(--bg);color:var(--tx);
+    font-family:var(--sans);font-size:16px;line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(1200px 600px at 80% -10%,rgba(33,145,140,.10),transparent 60%),
+                     radial-gradient(900px 500px at -10% 0%,rgba(91,42,134,.12),transparent 55%);
+  }
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:var(--mono);font-size:.86em;background:#11151f;border:1px solid var(--line);
+    padding:.1em .42em;border-radius:6px;color:#d7e0f2}
+  .layout{display:grid;grid-template-columns:288px 1fr;max-width:1400px;margin:0 auto;gap:0}
+
+  /* Sidebar */
+  aside{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;
+    padding:30px 18px 60px;border-right:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:11px;margin:0 6px 22px}
+  .glyph{width:38px;height:38px;border-radius:11px;flex:0 0 auto;
+    background:conic-gradient(from 210deg,var(--vi-purple),var(--vi-blue),var(--vi-teal),var(--vi-green),var(--vi-yellow),var(--vi-purple));
+    box-shadow:0 0 0 1px rgba(255,255,255,.06),0 8px 24px rgba(33,145,140,.25)}
+  .brand b{color:var(--tx-strong);font-size:1.02rem;letter-spacing:.2px}
+  .brand span{display:block;color:var(--tx-dim);font-size:.74rem;font-weight:500}
+  nav a{display:block;color:var(--tx-dim);font-size:.86rem;padding:6px 12px;border-radius:8px;
+    border-left:2px solid transparent;line-height:1.35}
+  nav a:hover{color:var(--tx);background:var(--panel);text-decoration:none}
+  nav a.active{color:var(--tx-strong);background:var(--accent-soft);border-left-color:var(--accent)}
+  nav .grp{margin:16px 12px 6px;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:#596079;font-weight:700}
+
+  /* Main */
+  main{padding:0 clamp(20px,4vw,64px) 120px;min-width:0}
+  .hero{padding:64px 0 34px;border-bottom:1px solid var(--line);margin-bottom:14px}
+  .hero h1{font-size:clamp(2rem,4.4vw,3.1rem);line-height:1.08;margin:.2em 0 .25em;color:var(--tx-strong);
+    letter-spacing:-.5px}
+  .hero h1 .grad{background:linear-gradient(100deg,var(--vi-teal),var(--vi-green) 60%,var(--vi-yellow));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{font-size:1.12rem;color:var(--tx-dim);max-width:70ch;margin:.3em 0 1.3em}
+  .badges{display:flex;flex-wrap:wrap;gap:8px}
+  .badge{font-size:.76rem;font-weight:600;color:#cdd6e6;background:var(--panel);
+    border:1px solid var(--line2);padding:5px 11px;border-radius:999px}
+  .badge .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:middle}
+
+  section{padding-top:46px}
+  h2{font-size:1.62rem;color:var(--tx-strong);margin:.2em 0 .1em;letter-spacing:-.3px;
+    display:flex;align-items:baseline;gap:12px}
+  h2 .n{font-family:var(--mono);font-size:.92rem;color:var(--vi-teal);font-weight:700;
+    border:1px solid var(--line2);border-radius:8px;padding:2px 9px;background:var(--panel)}
+  h3{font-size:1.16rem;color:var(--tx-strong);margin:1.7em 0 .2em}
+  h4{font-size:.96rem;color:#aeb7ca;margin:1.3em 0 .2em;letter-spacing:.2px;text-transform:uppercase;font-size:.8rem}
+  p{margin:.6em 0}
+  .lead{color:var(--tx-dim);font-size:1.04rem}
+  hr{border:none;border-top:1px solid var(--line);margin:34px 0}
+
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .card{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);
+    border-radius:var(--radius);padding:18px 20px}
+  .card h3{margin-top:0;font-size:1.04rem;display:flex;align-items:center;gap:9px}
+  .card p{margin:.35em 0;font-size:.92rem;color:var(--tx-dim)}
+  .tag{font-family:var(--mono);font-size:.72rem;color:#9fb4d8;background:#10141e;border:1px solid var(--line2);
+    border-radius:6px;padding:1px 7px}
+  .pill{font-size:.72rem;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap}
+  .ok{color:#bff0c8;background:rgba(94,201,98,.13);border:1px solid rgba(94,201,98,.3)}
+  .bonus{color:#ffe6a3;background:rgba(253,231,37,.10);border:1px solid rgba(253,231,37,.28)}
+
+  /* code */
+  pre{background:var(--code);border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow:auto;
+    font-family:var(--mono);font-size:.83rem;line-height:1.6;margin:.9em 0;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.015)}
+  pre code{background:none;border:none;padding:0;color:#cdd6e8}
+  .c-kw{color:#c792ea}.c-ty{color:#7fd4c1}.c-st{color:#e6c07b}.c-cm{color:#5d6677;font-style:italic}
+  .c-fn{color:#82aaff}.c-nm{color:#f0a675}
+
+  table{width:100%;border-collapse:collapse;margin:1em 0;font-size:.88rem}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:#aeb7ca;font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+  tr:hover td{background:rgba(255,255,255,.015)}
+  td code{font-size:.82em}
+
+  .note{border-left:3px solid var(--vi-teal);background:rgba(33,145,140,.07);border-radius:0 10px 10px 0;
+    padding:12px 16px;margin:1em 0;font-size:.93rem}
+  .note.warn{border-left-color:var(--vi-yellow);background:rgba(253,231,37,.06)}
+  .note b{color:var(--tx-strong)}
+
+  /* flow diagram */
+  .flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;margin:1.2em 0}
+  .flow .step{flex:1 1 130px;min-width:120px;background:var(--panel);border:1px solid var(--line2);
+    border-radius:12px;padding:13px 14px;position:relative}
+  .flow .step b{display:block;color:var(--tx-strong);font-size:.86rem}
+  .flow .step small{color:var(--tx-dim);font-size:.74rem;font-family:var(--mono)}
+  .flow .arrow{display:flex;align-items:center;color:var(--vi-teal);font-size:1.3rem;padding:0 8px}
+
+  .key{font-family:var(--mono);font-size:.78rem;background:#0c0f17;border:1px solid var(--line2);
+    border-bottom-width:2px;border-radius:6px;padding:2px 8px;color:#dfe6f4}
+  ul.clean{list-style:none;padding-left:0}
+  ul.clean li{padding:5px 0 5px 22px;position:relative;color:var(--tx-dim);font-size:.93rem}
+  ul.clean li::before{content:"";position:absolute;left:2px;top:13px;width:7px;height:7px;border-radius:2px;
+    background:linear-gradient(135deg,var(--vi-teal),var(--vi-green))}
+  .formula{font-family:var(--mono);background:#0c0f17;border:1px solid var(--line);border-radius:10px;
+    padding:11px 15px;margin:.6em 0;color:#dbe6f5;font-size:.9rem;overflow-x:auto}
+  .formula .v{color:var(--vi-green)}.formula .o{color:var(--vi-yellow)}
+  sub,sup{font-size:.72em}
+  footer{color:var(--tx-dim);font-size:.82rem;border-top:1px solid var(--line);margin-top:60px;padding-top:22px}
+  .swatch{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
+
+  @media(max-width:880px){
+    .layout{grid-template-columns:1fr}
+    aside{position:static;height:auto;border-right:none;border-bottom:1px solid var(--line)}
+    nav{display:grid;grid-template-columns:repeat(2,1fr);gap:2px}
+    .g2,.g3{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- ============ SIDEBAR ============ -->
+<aside>
+  <div class="brand">
+    <div class="glyph"></div>
+    <div><b>Maths&nbsp;Power</b><span>Guide du projet</span></div>
+  </div>
+  <nav id="toc">
+    <div class="grp">Découvrir</div>
+    <a href="#apercu">Aperçu</a>
+    <a href="#demarrage">Démarrage rapide</a>
+    <a href="#archi">Architecture en couches</a>
+    <a href="#conventions">Conventions &amp; repères</a>
+    <div class="grp">Mathématiques</div>
+    <a href="#maths">Courbes &amp; surfaces</a>
+    <a href="#partie1">Partie 1 — Extrusion</a>
+    <a href="#partie2">Partie 2 — Bézier</a>
+    <a href="#equipe">Couche algorithmique (équipe)</a>
+    <div class="grp">Rendu &amp; interface</div>
+    <a href="#rendu">Shader, couleur, lumière</a>
+    <a href="#camera">Caméra &amp; menus</a>
+    <a href="#theme">Thème &amp; UI kit</a>
+    <div class="grp">Référence</div>
+    <a href="#fichiers">Tous les fichiers</a>
+    <a href="#variables">Variables clés</a>
+    <a href="#enonce">Couverture de l'énoncé</a>
+  </nav>
+</aside>
+
+<!-- ============ MAIN ============ -->
+<main>
+
+  <header class="hero" id="top">
+    <h1>Surfaces paramétrées<br><span class="grad">en temps réel</span></h1>
+    <p>Un atelier 3D interactif pour explorer les <b>primitives d'extrusion</b> et les
+       <b>surfaces de Bézier</b> : courbes Bézier / B-spline / NURBS, maillage, normales,
+       coloriage, texturage procédural et éclairage — le tout calculé et rendu en direct.</p>
+    <div class="badges">
+      <span class="badge"><span class="dot" style="background:#478cbf"></span>Godot 4.5 (.NET)</span>
+      <span class="badge"><span class="dot" style="background:#9b6dd6"></span>C# · .NET 8</span>
+      <span class="badge"><span class="dot" style="background:#21918c"></span>Shader GLSL spatial</span>
+      <span class="badge"><span class="dot" style="background:#5ec962"></span>Algorithmes de l'équipe réutilisés</span>
+    </div>
+  </header>
+
+  <!-- APERÇU -->
+  <section id="apercu">
+    <h2><span class="n">01</span> Aperçu</h2>
+    <p class="lead">Le projet répond à un sujet en deux parties (notées séparément&nbsp;: CC et partiel).
+       Chaque partie est un onglet de l'application.</p>
+    <div class="grid g2">
+      <div class="card">
+        <h3><span class="swatch" style="background:linear-gradient(135deg,#3b528b,#21918c)"></span>Partie 1 — Extrusion</h3>
+        <p>On dessine un <b>profil 2D</b> (et une <b>âme</b> = trajectoire) avec une courbe au choix,
+           puis on l'extrude en 3D&nbsp;: sphère, cylindre, cône, extrusion simple, révolution,
+           extrusion généralisée.</p>
+      </div>
+      <div class="card">
+        <h3><span class="swatch" style="background:linear-gradient(135deg,#5ec962,#fde725)"></span>Partie 2 — Bézier</h3>
+        <p>On définit un <b>réseau de points de contrôle 3D</b> et on engendre la surface de Bézier
+           par trois méthodes&nbsp;: produit tensoriel direct, double De&nbsp;Casteljau, et subdivision en 4.</p>
+      </div>
+    </div>
+    <p>Les deux parties partagent le même moteur de rendu&nbsp;: un <b>shader procédural</b> qui colorie
+       (colormap viridis), texture (micro-relief, lignes de niveau) et éclaire la surface, plus des outils
+       communs de <b>caméra</b> (orbite / vol libre / traveling) et de <b>lumière</b>.</p>
+  </section>
+
+  <!-- DÉMARRAGE -->
+  <section id="demarrage">
+    <h2><span class="n">02</span> Démarrage rapide</h2>
+    <div class="grid g3">
+      <div class="card"><h3>1 · Ouvrir</h3><p>Ouvrir le dossier <code>maths-power</code> dans
+        <b>Godot&nbsp;4.5 mono</b> (.NET). Scène principale&nbsp;: <code>main.tscn</code>.</p></div>
+      <div class="card"><h3>2 · Compiler</h3><p><code>dotnet build "Maths Power.csproj"</code>
+        (assembly <code>Maths&nbsp;Power</code>). Godot compile aussi automatiquement au lancement.</p></div>
+      <div class="card"><h3>3 · Lancer</h3><p><span class="key">F5</span> dans l'éditeur. Fenêtre
+        <code>1600×900</code>, redimensionnable.</p></div>
+    </div>
+    <h4>Raccourcis utiles</h4>
+    <ul class="clean">
+      <li><span class="key">C</span> ouvre/ferme le menu <b>Caméra</b> · <span class="key">L</span> le menu <b>Lumière</b> (mutuellement exclusifs).</li>
+      <li>Bouton <span class="key">🌙 / ☀</span> en haut à droite&nbsp;: bascule thème sombre / clair.</li>
+      <li>Éditeur 2D&nbsp;: <b>clic</b> = ajouter un point, <b>glisser</b> = déplacer, <b>clic&nbsp;droit</b> = supprimer,
+          <b>clic-milieu</b> = pan, <b>molette sur un point</b> = poids NURBS.</li>
+    </ul>
+  </section>
+
+  <!-- ARCHITECTURE -->
+  <section id="archi">
+    <h2><span class="n">03</span> Architecture en couches</h2>
+    <p class="lead">Une donnée traverse toujours le même pipeline. Quand l'utilisateur change un paramètre,
+       le <i>setter</i> de la propriété appelle <code>Rebuild()</code>, qui recalcule toute la chaîne.</p>
+
+    <div class="flow">
+      <div class="step"><b>Interface</b><small>UiPanel · ProfileEditor</small></div>
+      <div class="arrow">→</div>
+      <div class="step"><b>Nœud surface</b><small>SurfaceCours1/2</small></div>
+      <div class="arrow">→</div>
+      <div class="step"><b>Maths</b><small>PolyMaths · Surfaces</small></div>
+      <div class="arrow">→</div>
+      <div class="step"><b>Grille</b><small>SurfaceGrid + normales</small></div>
+      <div class="arrow">→</div>
+      <div class="step"><b>Maillage</b><small>MeshBuilder → ArrayMesh</small></div>
+      <div class="arrow">→</div>
+      <div class="step"><b>Rendu</b><small>surface.gdshader</small></div>
+    </div>
+
+    <p>Chaque couche a une responsabilité unique&nbsp;:</p>
+    <ul class="clean">
+      <li><b>Interface</b> — panneaux latéraux et éditeurs 2D. Ne contient aucune maths&nbsp;: elle pousse des valeurs vers le nœud de surface.</li>
+      <li><b>Nœud de surface</b> (<code>MeshInstance3D</code>) — orchestre le calcul&nbsp;: échantillonne les courbes, remplit une <code>SurfaceGrid</code>, déclenche le maillage et la mise à jour du matériau.</li>
+      <li><b>Couche maths</b> — les algorithmes purs. Soit ceux <b>fournis par l'équipe</b> (<code>PolyMaths.Algorithms</code>), soit les surfaces paramétrées (<code>Surfaces.cs</code>).</li>
+      <li><b>Grille</b> — un tableau régulier de points (m+1)×(p+1) avec le tableau des <b>normales</b> associé.</li>
+      <li><b>Maillage</b> — convertit la grille en <code>ArrayMesh</code> (sommets, normales, couleurs, UV) prêt pour le GPU.</li>
+      <li><b>Rendu</b> — le shader fait le coloriage, le texturage et l'éclairage par fragment.</li>
+    </ul>
+
+    <h4>Le réflexe « Rebuild »</h4>
+    <pre><code><span class="c-cm">// Chaque propriété exposée déclenche la reconstruction du mesh.</span>
+[<span class="c-ty">Export</span>] <span class="c-kw">public</span> <span class="c-ty">float</span> Radius {
+    <span class="c-kw">get</span> => _radius;
+    <span class="c-kw">set</span> { _radius = <span class="c-ty">Mathf</span>.Max(0.01f, value); <span class="c-fn">Rebuild</span>(); }
+}</code></pre>
+    <div class="note"><b>Pourquoi un mesh et non du dessin immédiat&nbsp;?</b> Reconstruire un
+      <code>ArrayMesh</code> à chaque changement évite le scintillement et laisse le GPU faire
+      l'éclairage&nbsp;: c'est stable et rapide même à haute résolution.</div>
+  </section>
+
+  <!-- CONVENTIONS -->
+  <section id="conventions">
+    <h2><span class="n">04</span> Conventions &amp; repères</h2>
+    <table>
+      <tr><th>Sujet</th><th>Convention</th><th>Où</th></tr>
+      <tr><td>Axe vertical</td><td>Le polycopié est <b>z&nbsp;vers le haut</b>&nbsp;; Godot est <b>y&nbsp;vers le haut</b>.</td><td>partout</td></tr>
+      <tr><td>Conversion repère</td><td><code>(x, y, z) → (x, z, −y)</code></td><td><code>MeshBuilder.ToGodot</code></td></tr>
+      <tr><td>Stockage grille</td><td>Ligne-majeur&nbsp;: <code>Data[i·(p+1)+j]</code></td><td><code>SurfaceGrid</code></td></tr>
+      <tr><td>Paramétrage</td><td><code>u = i/m</code>, <code>v = j/p</code> envoyés en <code>UV</code>&nbsp;; hauteur normalisée en <code>UV2.x</code></td><td><code>MeshBuilder</code></td></tr>
+      <tr><td>Namespace appli</td><td><code>MathsPower</code></td><td>tout <code>src/</code></td></tr>
+      <tr><td>Namespace équipe</td><td><code>PolyMaths.Algorithms</code> (intact)</td><td><code>src/PolyMaths/</code></td></tr>
+    </table>
+    <div class="note"><b>Pourquoi convertir le repère dans le maillage&nbsp;?</b> Toute la couche maths
+      raisonne en <code>z&nbsp;haut</code> (comme le cours). La conversion est centralisée au dernier moment
+      (<code>MeshBuilder</code>), donc les formules restent fidèles au polycopié.</div>
+  </section>
+
+  <!-- MATHS -->
+  <section id="maths">
+    <h2><span class="n">05</span> Courbes &amp; surfaces</h2>
+
+    <h3>Les trois familles de courbes</h3>
+    <div class="grid g3">
+      <div class="card"><h3>Bézier</h3><p>Algorithme de <b>De&nbsp;Casteljau</b> (interpolations linéaires
+        successives) ou formule de <b>Bernstein</b> avec le triangle de Pascal.</p></div>
+      <div class="card"><h3>B-spline</h3><p>Base de <b>Cox-de&nbsp;Boor</b>, degré réglable, vecteur nodal
+        clampé. Contrôle local de la courbe.</p></div>
+      <div class="card"><h3>NURBS</h3><p>De&nbsp;Boor <b>rationnel</b>&nbsp;: chaque point porte un
+        <b>poids</b>. Poids&nbsp;=&nbsp;1 → identique à la B-spline&nbsp;; &gt;&nbsp;1 attire la courbe.</p></div>
+    </div>
+
+    <h4>De Casteljau (cœur de Bézier)</h4>
+    <div class="formula"><span class="v">b</span><sub>i</sub><sup>r</sup>(t) = (1−t)·<span class="v">b</span><sub>i</sub><sup>r−1</sup> <span class="o">+</span> t·<span class="v">b</span><sub>i+1</sub><sup>r−1</sup>&nbsp;&nbsp;&nbsp;jusqu'à un point unique <span class="v">b</span><sub>0</sub><sup>n</sup>(t)</div>
+
+    <h4>Bernstein (forme directe, triangle de Pascal)</h4>
+    <div class="formula"><span class="v">B</span>(t) = Σ<sub>i=0</sub><sup>n</sup> C(n,i)·t<sup>i</sup>·(1−t)<sup>n−i</sup>·<span class="v">P</span><sub>i</sub></div>
+
+    <h3>Surfaces par produit tensoriel</h3>
+    <p>Une surface de Bézier est le produit de deux bases de courbes, une en <code>u</code>, une en <code>v</code>&nbsp;:</p>
+    <div class="formula"><span class="v">B</span>(u,v) = Σ<sub>i=0</sub><sup>m</sup> Σ<sub>j=0</sub><sup>n</sup> <span class="v">B</span><sub>i</sub><sup>m</sup>(u)·<span class="v">B</span><sub>j</sub><sup>n</sup>(v)·<span class="v">P</span><sub>ij</sub></div>
+    <p>On peut l'évaluer <b>directement</b> (Bernstein) ou par <b>double De&nbsp;Casteljau</b>&nbsp;: d'abord
+       les courbes « lignes » <code>c<sub>i</sub>(v)</code>, puis une dernière courbe sur leurs résultats.</p>
+  </section>
+
+  <!-- PARTIE 1 -->
+  <section id="partie1">
+    <h2><span class="n">06</span> Partie 1 — Extrusion</h2>
+    <p class="lead">Nœud <code>SurfaceCours1</code>. Deux affichages&nbsp;: l'<b>éditeur 2D</b>
+      (<code>ProfileEditor</code>) pour construire les courbes, et la <b>vue 3D</b> pour la surface.</p>
+
+    <h3>Les six primitives</h3>
+    <table>
+      <tr><th>Primitive</th><th>Formule (z haut)</th></tr>
+      <tr><td>Sphère</td><td class="formula" style="border:none;background:none;padding:0">(R·cosθ·sinφ, R·sinθ·sinφ, R·cosφ)</td></tr>
+      <tr><td>Cylindre</td><td class="formula" style="border:none;background:none;padding:0">(R·cosθ, R·sinθ, h)</td></tr>
+      <tr><td>Cône</td><td class="formula" style="border:none;background:none;padding:0">R<sub>h</sub> = (1 − h/H)·R&nbsp; puis (R<sub>h</sub>cosθ, R<sub>h</sub>sinθ, h)</td></tr>
+      <tr><td>Extrusion simple</td><td class="formula" style="border:none;background:none;padding:0">facteur = h<sub>n</sub>(p−1)+1&nbsp; → (x·facteur, y·facteur, h<sub>n</sub>·H)</td></tr>
+      <tr><td>Révolution</td><td class="formula" style="border:none;background:none;padding:0">(f·cosθ, f·sinθ, g)&nbsp; — rotation du profil (f,g) autour de l'axe</td></tr>
+      <tr><td>Extrusion généralisée</td><td class="formula" style="border:none;background:none;padding:0">σ(t,s) = A(s) + x<sub>f</sub>(t)·U + y<sub>f</sub>(t)·N</td></tr>
+    </table>
+    <p>Pour l'extrusion généralisée, on glisse la <b>forme</b> le long de l'<b>âme</b> A&nbsp;: le repère
+       local se déduit de la vitesse V&nbsp;=&nbsp;dA/ds, de N&nbsp;=&nbsp;(0,0,1) et de
+       U&nbsp;=&nbsp;(V×N)/|V×N|. Les formules vivent verbatim dans <code>Surfaces.cs</code>.</p>
+
+    <h3>Sélection du type de courbe + poids NURBS</h3>
+    <ul class="clean">
+      <li>Menu <b>Type de courbe</b>&nbsp;: Bézier · B-spline · NURBS · Polygone — appliqué au profil et à l'âme.</li>
+      <li>Slider <b>degré</b> (apparaît pour B-spline / NURBS) — degré 1 à 7.</li>
+      <li>En mode NURBS, chaque point a son <b>poids</b>&nbsp;: <b>molette</b> sur un point pour le régler
+          (Maj = pas fin), <b>double-clic</b> pour le remettre à 1. Un anneau visualise le poids.</li>
+    </ul>
+    <p>L'échantillonnage passe par <code>ProfileSampler.Sample(...)</code>, qui aiguille vers
+       <code>BezierCurve</code>, <code>BSplineCurve</code> ou <code>NURBSCurve</code> de l'équipe selon le choix.</p>
+  </section>
+
+  <!-- PARTIE 2 -->
+  <section id="partie2">
+    <h2><span class="n">07</span> Partie 2 — Surfaces de Bézier</h2>
+    <p class="lead">Nœud <code>SurfaceCours2</code>. Un <b>réseau de contrôle</b> (m+1)×(n+1)
+      (<code>ControlNet</code>) engendre la surface via les algorithmes de l'équipe
+      (<code>BezierSurface</code>).</p>
+
+    <h3>Trois méthodes</h3>
+    <div class="grid g3">
+      <div class="card"><h3>Direct</h3><p><code>EvaluateDirect(u,v)</code> — produit tensoriel par la base
+        de Bernstein, accéléré avec le <b>triangle de Pascal</b>. Exemple bi-cubique (m=n=3).</p></div>
+      <div class="card"><h3>Double De Casteljau</h3><p><code>EvaluateDoubleCasteljau(u,v)</code> — deux
+        passes de De&nbsp;Casteljau (lignes puis colonne). Même surface, construction différente.</p></div>
+      <div class="card"><h3>Subdivision ×4</h3><p><code>Subdivide()</code> — découpe le réseau (colonnes
+        puis lignes) en <b>4 quartiers</b> qui convergent vite vers la surface.</p></div>
+    </div>
+
+    <h3>Overlay d'évaluation B(u₀, v₀)</h3>
+    <p>Un <b>marqueur rouge</b> (toujours visible) montre le point B(u₀,v₀)&nbsp;; les sliders
+       <code>u₀/v₀</code> le déplacent en direct. La case « Overlay » ajoute la construction&nbsp;:
+       les courbes « lignes » c<sub>i</sub>(v) (vert), le polygone intermédiaire c<sub>i</sub>(v₀) (orange)
+       et la courbe finale B(u,v₀) (vert vif) sur laquelle glisse le marqueur.</p>
+
+    <h4>Formes de réseau prédéfinies</h4>
+    <p><code>Bosse</code> · <code>Selle</code> · <code>Vague</code> (somme de deux sinus perpendiculaires) ·
+       <code>Plat</code> · <code>Aléatoire</code> (graine ré-tirable). Réglages&nbsp;: étalement, amplitude,
+       degrés m/n, résolution.</p>
+  </section>
+
+  <!-- ÉQUIPE -->
+  <section id="equipe">
+    <h2><span class="n">08</span> Couche algorithmique (code de l'équipe)</h2>
+    <p class="lead">Les algorithmes de courbes/surfaces proviennent d'un autre membre du groupe et sont
+      <b>réutilisés tels quels</b> dans <code>src/PolyMaths/</code> — aucun nom de fonction ou de variable
+      n'a été modifié.</p>
+
+    <table>
+      <tr><th>Fichier</th><th>Rôle</th><th>Éléments clés</th></tr>
+      <tr><td><code>Point2D.cs</code></td><td>Point/vecteur 2D</td><td><code>x, y</code>, <code>Cross</code>, <code>Dot</code>, <code>DistanceTo</code></td></tr>
+      <tr><td><code>Point3D.cs</code></td><td>Point/vecteur 3D</td><td><code>x, y, z</code>, opérateurs</td></tr>
+      <tr><td><code>Matrix3x3.cs</code></td><td>Transformations 2D homogènes</td><td><code>TransformPoint</code></td></tr>
+      <tr><td><code>BezierCurve.cs</code></td><td>Courbe de Bézier</td><td><code>EvaluateDirect</code>, <code>EvaluateCasteljau</code>, <code>RebuildPascal</code>, <code>AddPoint(3D)</code></td></tr>
+      <tr><td><code>BSplineCurve.cs</code></td><td>B-spline (Cox-de Boor)</td><td><code>Degree</code>, <code>Evaluate</code>, <code>Basis</code></td></tr>
+      <tr><td><code>NURBSCurve.cs</code></td><td>NURBS (De Boor rationnel)</td><td><code>AddPoint(p, poids)</code></td></tr>
+      <tr><td><code>BezierSurface.cs</code></td><td>Surface de Bézier</td><td><code>EvaluateDirect</code>, <code>EvaluateDoubleCasteljau</code>, <code>Subdivide</code></td></tr>
+    </table>
+
+    <div class="note warn"><b>Un seul correctif documenté.</b> Dans <code>BezierCurve.cs</code>, la propriété
+      <code>Degree</code> renvoyait <code>_controlPoints2D.Count − 1</code>&nbsp;; or une courbe 3D ne remplit
+      que <code>_controlPoints3D</code>. Sans correction, <code>Degree = −1</code> et la surface « directe »
+      s'effondrait à zéro. Le correctif choisit la bonne liste — <b>sans renommer quoi que ce soit</b>.</div>
+
+    <p>Les ponts entre l'appli et cette couche&nbsp;:</p>
+    <ul class="clean">
+      <li><code>ControlNet.ToPoint3DArray()</code> → fournit le réseau au format <code>Point3D[,]</code> attendu par <code>BezierSurface</code>.</li>
+      <li><code>ProfileSampler</code> → traduit les points 2D de l'éditeur en <code>Point2D</code> et appelle la bonne courbe.</li>
+      <li>Un <code>.editorconfig</code> local neutralise des avertissements <i>nullable</i> propres à ce code, <b>sans toucher aux fichiers</b>.</li>
+    </ul>
+  </section>
+
+  <!-- RENDU -->
+  <section id="rendu">
+    <h2><span class="n">09</span> Shader, couleur, lumière</h2>
+    <p class="lead">Tout le rendu de surface tient dans <code>shaders/surface.gdshader</code> — un shader
+      spatial qui colorie, texture et éclaire par fragment. Piloté par <code>SurfaceShaderController</code>.</p>
+
+    <h3>Modes de rendu</h3>
+    <table>
+      <tr><th>#</th><th>Mode</th><th>Effet</th></tr>
+      <tr><td>0</td><td>Viridis lisse</td><td>Colormap viridis selon la hauteur — mat, la couleur (donnée) domine.</td></tr>
+      <tr><td>1</td><td>Damier UV</td><td>Échiquier sur le paramétrage (u,v).</td></tr>
+      <tr><td>2</td><td>Topographique</td><td>Lignes de niveau émissives + bandes assombries.</td></tr>
+      <tr><td>3</td><td>Brillant</td><td>PBR réfléchissant&nbsp;: rugosité &amp; métallique réglables.</td></tr>
+      <tr><td>4</td><td>Iridescent</td><td>Teinte de film mince qui défile avec l'angle de vue.</td></tr>
+    </table>
+
+    <h3>Détails du shader</h3>
+    <ul class="clean">
+      <li><b>Micro-relief</b> — bruit <i>fbm</i> échantillonné en <b>UV</b> (densité constante quelle que soit la taille de la surface), perturbation de normale par dérivées (Mikkelsen, sans tangentes).</li>
+      <li><b>Modes « données » mats</b> — faible spéculaire pour ne pas voiler la couleur avec le reflet du ciel&nbsp;; les modes « matière » (Brillant / Iridescent) restent réfléchissants.</li>
+      <li><b>Rim de Fresnel</b> resserré et atténué sur les nappes plates.</li>
+      <li><b>Toggle Éclairage</b> — uniforme <code>lit</code>&nbsp;: <code>true</code> = PBR complet, <code>false</code> = aplat de couleur « sans éclairage » (la couleur est émise telle quelle).</li>
+    </ul>
+
+    <h4>Éclairage de la scène</h4>
+    <p>Lumière <b>directionnelle</b> (diffuse Burley + spéculaire Schlick-GGX), lumière de <b>remplissage</b>,
+       lumière <b>ambiante</b>, plus un <code>WorldEnvironment</code>&nbsp;: glow/bloom, tonemap ACES, SSAO,
+       ciel procédural pour les reflets. Tout est réglable dans le menu <b>Lumière</b> (<span class="key">L</span>).</p>
+
+    <h4>La colormap viridis</h4>
+    <p>Approximée par un polynôme sRGB de degré 6 dans le shader (et par interpolation de paliers côté C#
+       dans <code>MeshBuilder.Viridis</code> pour le repli sans shader).</p>
+    <p style="margin-top:14px">
+      <span class="swatch" style="background:#440154"></span>
+      <span class="swatch" style="background:#3b528b"></span>
+      <span class="swatch" style="background:#21918c"></span>
+      <span class="swatch" style="background:#5ec962"></span>
+      <span class="swatch" style="background:#fde725"></span>
+      <span style="color:var(--tx-dim);font-size:.85rem">bas → haut</span>
+    </p>
+  </section>
+
+  <!-- CAMÉRA -->
+  <section id="camera">
+    <h2><span class="n">10</span> Caméra &amp; menus</h2>
+    <div class="grid g2">
+      <div class="card">
+        <h3>OrbitCamera</h3>
+        <p><b>Orbite</b> — glisser&nbsp;: tourner&nbsp;; clic-milieu&nbsp;: pan&nbsp;; molette&nbsp;: zoom.</p>
+        <p><b>Vol libre</b> — ZQSD/WASD + Espace/Ctrl, Maj&nbsp;= rapide, clic droit&nbsp;= regarder.</p>
+        <p><b>Traveling</b> — rotation automatique à vitesse réglable. Projection ortho ↔ perspective,
+           transitions douces vers Face / Dessus / 3-quarts.</p>
+      </div>
+      <div class="card">
+        <h3>Menus (toggle)</h3>
+        <p><span class="key">C</span> <b>CameraMenu</b> — mode, projection, traveling, FOV, vues préréglées.</p>
+        <p><span class="key">L</span> <b>LightMenu</b> — couleurs &amp; énergies des lumières, azimut/élévation
+           du soleil, ombres, ambiante, SSAO, presets (Studio, Dramatique, Plat).</p>
+        <p>Les deux menus sont <b>mutuellement exclusifs</b> (ouvrir l'un ferme l'autre).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- THÈME -->
+  <section id="theme">
+    <h2><span class="n">11</span> Thème &amp; UI kit</h2>
+    <ul class="clean">
+      <li><code>ThemeState</code> / <code>Palette</code> — un état global sombre/clair et une palette de
+          couleurs unifiée (<code>Dark()</code> / <code>Light()</code>) que toute l'UI consulte au rendu.</li>
+      <li><code>UiTheme</code> — construit un <code>Theme</code> Godot cohérent pour <b>tous</b> les contrôles
+          (boutons, listes déroulantes, popups, curseurs, barre de défilement) au lieu du thème par défaut.</li>
+      <li><code>UiKit</code> — widgets réutilisables&nbsp;: en-tête de section (barre d'accent + libellé) et
+          rangée de slider standardisée.</li>
+      <li>Le bouton 🌙/☀ de la <code>TopBar</code> bascule le thème et propage <code>ApplyTheme()</code> à tous les panneaux et à la scène 3D.</li>
+    </ul>
+    <div class="note"><b>Astuce de finition.</b> La largeur d'une barre de défilement verticale vient des
+      marges de contenu de son stylebox « scroll »&nbsp;: sans marge, elle se réduit à un trait invisible.
+      Le thème lui impose donc une largeur explicite.</div>
+  </section>
+
+  <!-- FICHIERS -->
+  <section id="fichiers">
+    <h2><span class="n">12</span> Tous les fichiers</h2>
+
+    <h4>Nœuds de surface &amp; maths d'extrusion</h4>
+    <table>
+      <tr><th>Fichier</th><th>Rôle</th></tr>
+      <tr><td><code>SurfaceCours1.cs</code></td><td>Nœud Partie 1. Pilote les 6 primitives, le profil/âme, les types de courbe, les poids et le degré.</td></tr>
+      <tr><td><code>SurfaceCours2.cs</code></td><td>Nœud Partie 2. Réseau de contrôle, 3 méthodes, subdivision, overlay B(u₀,v₀).</td></tr>
+      <tr><td><code>Surfaces.cs</code></td><td>Surfaces paramétrées du cours (formules verbatim) → <code>SurfaceGrid</code>.</td></tr>
+      <tr><td><code>ControlNet.cs</code></td><td>Réseau de contrôle (m+1)×(n+1)&nbsp;; conversion vers <code>Point3D[,]</code>.</td></tr>
+      <tr><td><code>SurfaceGrid.cs</code></td><td>Grille échantillonnée + tableau des normales (différences finies).</td></tr>
+      <tr><td><code>Bezier.cs</code></td><td>De Casteljau 2D pour les profils par défaut.</td></tr>
+      <tr><td><code>ProfileSampler.cs</code></td><td>Échantillonne un polygone selon le type (Bézier/Bspline/NURBS/Polygone) via la couche équipe.</td></tr>
+    </table>
+
+    <h4>Maillage &amp; rendu</h4>
+    <table>
+      <tr><th>Fichier</th><th>Rôle</th></tr>
+      <tr><td><code>MeshBuilder.cs</code></td><td>SurfaceGrid → <code>ArrayMesh</code> (sommets, normales, couleurs viridis, UV/UV2), tubes, marqueurs, wireframe.</td></tr>
+      <tr><td><code>SurfaceShaderController.cs</code></td><td>Encapsule le <code>ShaderMaterial</code> et ses uniformes (mode, grille, rugosité, métallique, <code>lit</code>).</td></tr>
+      <tr><td><code>shaders/surface.gdshader</code></td><td>Le shader procédural (couleur + texture + lumière).</td></tr>
+      <tr><td><code>GroundGrid.cs</code></td><td>Grille de sol + axes monde colorés X/Y/Z.</td></tr>
+    </table>
+
+    <h4>Interface</h4>
+    <table>
+      <tr><th>Fichier</th><th>Rôle</th></tr>
+      <tr><td><code>TopBar.cs</code></td><td>Barre supérieure&nbsp;: onglets Partie 1 / Partie 2 + bascule de thème.</td></tr>
+      <tr><td><code>UiPanel.cs</code></td><td>Panneau Partie 1 (primitive, maillage, paramètres, type de courbe, presets, rendu, vue).</td></tr>
+      <tr><td><code>UiPanelCours2.cs</code></td><td>Panneau Partie 2 (algorithme, forme, degrés, évaluation, rendu, affichage).</td></tr>
+      <tr><td><code>ProfileEditor.cs</code></td><td>Éditeur 2D de courbe (profil ou âme) avec édition des poids NURBS.</td></tr>
+      <tr><td><code>CameraMenu.cs</code> · <code>LightMenu.cs</code></td><td>Menus toggle Caméra (C) et Lumière (L).</td></tr>
+      <tr><td><code>UiKit.cs</code> · <code>UiTheme.cs</code> · <code>ThemeState.cs</code></td><td>Widgets partagés, thème des contrôles, palette sombre/claire.</td></tr>
+      <tr><td><code>OrbitCamera.cs</code></td><td>Caméra orbite / vol libre / traveling.</td></tr>
+    </table>
+  </section>
+
+  <!-- VARIABLES -->
+  <section id="variables">
+    <h2><span class="n">13</span> Variables clés</h2>
+
+    <h3>SurfaceCours1 (Partie 1)</h3>
+    <table>
+      <tr><th>Variable</th><th>Sens</th></tr>
+      <tr><td><code>_primitive</code></td><td>primitive courante (<code>Primitive</code>&nbsp;: Sphere…ExtrusionGeneralisee)</td></tr>
+      <tr><td><code>_subdivisionsU / _subdivisionsV</code></td><td>résolution du maillage (m, p)</td></tr>
+      <tr><td><code>_radius / _height / _pCoef</code></td><td>rayon, hauteur, coefficient d'agrandissement de la base</td></tr>
+      <tr><td><code>_ameZAmp / _ameZFreq</code></td><td>relief vertical de l'âme (sort l'âme du plan z=0 — bonus)</td></tr>
+      <tr><td><code>_profileControlPoints / _profileWeights</code></td><td>points du profil + poids NURBS (un par point)</td></tr>
+      <tr><td><code>_ameControlPoints / _ameWeights</code></td><td>idem pour l'âme (trajectoire)</td></tr>
+      <tr><td><code>_profileCurveKind / _splineDegree</code></td><td>type de courbe choisi + degré B-spline/NURBS</td></tr>
+    </table>
+
+    <h3>SurfaceCours2 (Partie 2)</h3>
+    <table>
+      <tr><th>Variable</th><th>Sens</th></tr>
+      <tr><td><code>_algo</code></td><td>méthode d'évaluation (<code>Direct</code> / <code>DoubleCasteljau</code>)</td></tr>
+      <tr><td><code>_mode</code></td><td>forme du réseau (<code>Bosse</code>, <code>Selle</code>, <code>Vague</code>, <code>Plat</code>, <code>Aleatoire</code>)</td></tr>
+      <tr><td><code>_m / _n / _res</code></td><td>degrés du réseau + résolution d'échantillonnage</td></tr>
+      <tr><td><code>_spread / _amplitude / _freqU / _freqV</code></td><td>étalement, hauteur, fréquences (mode Vague)</td></tr>
+      <tr><td><code>_net</code></td><td>réseau de contrôle (<code>ControlNet</code>)</td></tr>
+      <tr><td><code>_u0 / _v0 / _showEval</code></td><td>position du marqueur B(u₀,v₀) + affichage de la construction</td></tr>
+      <tr><td><code>_showControlNet / _showSubdivision / _showWireframe</code></td><td>options d'affichage</td></tr>
+    </table>
+
+    <h3>SurfaceGrid</h3>
+    <table>
+      <tr><th>Variable</th><th>Sens</th></tr>
+      <tr><td><code>M / P</code></td><td>nombre de subdivisions (grille (M+1)×(P+1))</td></tr>
+      <tr><td><code>Data[]</code></td><td>points de la surface (ligne-majeur, z haut)</td></tr>
+      <tr><td><code>Normals[]</code></td><td>tableau des normales par point</td></tr>
+      <tr><td><code>ComputeNormals(flip)</code></td><td>calcule les normales par différences finies (<code>flip</code> inverse le produit vectoriel pour sphère/révolution)</td></tr>
+    </table>
+  </section>
+
+  <!-- ÉNONCÉ -->
+  <section id="enonce">
+    <h2><span class="n">14</span> Couverture de l'énoncé</h2>
+
+    <h3>A) Extrusion graphique</h3>
+    <table>
+      <tr><th>Exigence</th><th>État</th></tr>
+      <tr><td>Bézier (De Casteljau), B-spline (Cox-de Boor), NURBS (poids) + sélection</td><td><span class="pill ok">Fait</span></td></tr>
+      <tr><td>Primitives interactives&nbsp;: profil 2D + trajectoire (tous types de courbe)</td><td><span class="pill ok">Fait</span></td></tr>
+      <tr><td>Maillage triangulaire</td><td><span class="pill ok">Fait</span></td></tr>
+      <tr><td>Tableau des normales par point</td><td><span class="pill ok">Fait</span></td></tr>
+      <tr><td>Coloriage + texturage + lumière (ambiante/diffuse/spéculaire)</td><td><span class="pill ok">Fait</span></td></tr>
+      <tr><td>Animation (visualisation)</td><td><span class="pill ok">Fait · traveling</span></td></tr>
+      <tr><td>Plein/texturé <b>avec et sans éclairage</b>, filaire</td><td><span class="pill ok">Fait · toggle Éclairage</span></td></tr>
+      <tr><td>Âme 3D hors du plan z=0</td><td><span class="pill bonus">Bonus · partiel</span></td></tr>
+      <tr><td>Réfraction / transparence + liste de textures</td><td><span class="pill bonus">Bonus</span></td></tr>
+    </table>
+
+    <h3>B) Surfaces de Bézier</h3>
+    <table>
+      <tr><th>Exigence</th><th>État</th></tr>
+      <tr><td>Réseau de points de contrôle 3D (lignes/colonnes)</td><td><span class="pill ok">Fait</span></td></tr>
+      <tr><td>Produit tensoriel direct (Bernstein + Pascal, bi-cubique)</td><td><span class="pill ok">Fait</span></td></tr>
+      <tr><td>Double De Casteljau</td><td><span class="pill ok">Fait</span></td></tr>
+      <tr><td>Subdivision en 4 (colonnes puis lignes)</td><td><span class="pill ok">Fait</span></td></tr>
+      <tr><td>Maillage + normales + coloriage/texture/lumière</td><td><span class="pill ok">Fait</span></td></tr>
+      <tr><td>Animation</td><td><span class="pill ok">Fait · traveling</span></td></tr>
+      <tr><td>Caméra libre (Godot)</td><td><span class="pill ok">Fait</span></td></tr>
+      <tr><td>Raccord bord-à-bord de plusieurs surfaces</td><td><span class="pill bonus">Bonus</span></td></tr>
+    </table>
+  </section>
+
+  <footer>
+    <p><b>Maths Power</b> — Godot 4.5 (.NET / C#) · shader GLSL spatial.
+       Couche algorithmique <code>PolyMaths.Algorithms</code> fournie par l'équipe et réutilisée verbatim
+       (un seul correctif documenté de <code>Degree</code>).</p>
+    <p style="margin-top:8px;color:#596079">Guide généré pour la navigation du projet.</p>
+  </footer>
+
+</main>
+</div>
+
+<script>
+  // Scroll-spy : surligne la section visible dans le sommaire.
+  const links = [...document.querySelectorAll('#toc a')];
+  const map = new Map(links.map(a => [a.getAttribute('href').slice(1), a]));
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const a = map.get(e.target.id);
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-12% 0px -78% 0px', threshold: 0 });
+  document.querySelectorAll('main section').forEach(s => obs.observe(s));
+</script>
+</body>
+</html>

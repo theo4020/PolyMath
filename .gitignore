@@ -1,0 +1,22 @@
+# Godot 4+
+.godot/
+/android/
+/builds/
+
+# .NET / C#
+.mono/
+bin/
+obj/
+*.user
+
+# Claude Code (ne pas committer)
+.claude/
+
+# Ancien prototype Rust (hors de la présentation Godot)
+rust/
+_rust_archive/
+
+# Artefacts temporaires
+*.tmp
+_shot.png
+_shot.png.import
